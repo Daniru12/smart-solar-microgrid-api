@@ -42,6 +42,33 @@ builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
+// Test MongoDB Connection on Startup
+try
+{
+    var settings = app.Services.GetRequiredService<MongoDbSettings>();
+    var client = new MongoDB.Driver.MongoClient(settings.ConnectionString);
+    var database = client.GetDatabase(settings.DatabaseName);
+    
+    // Ping to verify connection
+    database.RunCommand((MongoDB.Driver.Command<MongoDB.Bson.BsonDocument>)"{ping:1}");
+    
+    Console.ForegroundColor = ConsoleColor.Green;
+    Console.WriteLine("\n=======================================================");
+    Console.WriteLine(" SUCCESS: Successfully connected to MongoDB Database! ");
+    Console.WriteLine($" Database Name: {settings.DatabaseName}");
+    Console.WriteLine("=======================================================\n");
+    Console.ResetColor();
+}
+catch (Exception ex)
+{
+    Console.ForegroundColor = ConsoleColor.Red;
+    Console.WriteLine("\n=======================================================");
+    Console.WriteLine(" ERROR: Failed to connect to MongoDB cluster! ");
+    Console.WriteLine($" Details: {ex.Message}");
+    Console.WriteLine("=======================================================\n");
+    Console.ResetColor();
+}
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
