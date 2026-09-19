@@ -1,6 +1,11 @@
-﻿using SmartSolarMicrogrid.API.Components.Identity.DTOs;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
+using SmartSolarMicrogrid.API.Components.Identity.DTOs;
 using SmartSolarMicrogrid.API.Components.Identity.Interfaces;
 using System;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace SmartSolarMicrogrid.API.Components.Identity.Services
@@ -8,10 +13,12 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
     public class AuthService : IAuthService
     {
         private readonly IUserRepository _userRepository;
+        private readonly IConfiguration _configuration;
 
-        public AuthService(IUserRepository userRepository)
+        public AuthService(IUserRepository userRepository, IConfiguration configuration)
         {
             _userRepository = userRepository;
+            _configuration = configuration;
         }
 
         public async Task<LoginResponse> LoginAsync(LoginRequest request)
@@ -27,10 +34,27 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
                 throw new UnauthorizedAccessException("Invalid credentials.");
             }
 
-            // Return a simple dummy token for the initial assignment phase
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.ASCII.GetBytes(_configuration["JwtSettings:SecretKey"] ?? "");
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(new[]
+                {
+                    new Claim(ClaimTypes.NameIdentifier, user.Id),
+                    new Claim(ClaimTypes.Email, user.Email),
+                    new Claim(ClaimTypes.Role, user.Role.ToString())
+                }),
+                Expires = DateTime.UtcNow.AddHours(2),
+                Issuer = _configuration["JwtSettings:Issuer"],
+                Audience = _configuration["JwtSettings:Audience"],
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+            };
+            
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+
             return new LoginResponse
             {
-                Token = $"dummy-token-for-{user.Id}",
+                Token = tokenHandler.WriteToken(token),
                 UserId = user.Id,
                 Role = user.Role.ToString()
             };
