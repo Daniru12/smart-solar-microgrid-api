@@ -69,5 +69,85 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
                 await _userRepository.UpdateAsync(user.Id, user);
             }
         }
+
+        public async Task<ProsumerProfileResponse> GetCurrentProsumerAsync(string userId)
+        {
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null) throw new KeyNotFoundException("User not found.");
+
+            var prosumer = await _prosumerRepository.GetByUserIdAsync(userId);
+            if (prosumer == null) throw new KeyNotFoundException("Prosumer profile not found.");
+
+            return new ProsumerProfileResponse
+            {
+                Id = prosumer.Id,
+                UserId = prosumer.UserId,
+                NIC = prosumer.NIC,
+                FirstName = prosumer.FirstName,
+                LastName = prosumer.LastName,
+                Email = user.Email,
+                PhoneNumber = prosumer.PhoneNumber,
+                Address = prosumer.Address,
+                Status = user.Status.ToString(),
+                CreatedAt = user.CreatedAt
+            };
+        }
+
+        public async Task<ProsumerProfileResponse> UpdateCurrentProsumerAsync(string userId, UpdateProsumerRequest request)
+        {
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null) throw new KeyNotFoundException("User not found.");
+
+            var prosumer = await _prosumerRepository.GetByUserIdAsync(userId);
+            if (prosumer == null) throw new KeyNotFoundException("Prosumer profile not found.");
+
+            prosumer.FirstName = request.FirstName;
+            prosumer.LastName = request.LastName;
+            prosumer.PhoneNumber = request.PhoneNumber;
+            prosumer.Address = request.Address;
+
+            await _prosumerRepository.UpdateAsync(prosumer.Id, prosumer);
+
+            return new ProsumerProfileResponse
+            {
+                Id = prosumer.Id,
+                UserId = prosumer.UserId,
+                NIC = prosumer.NIC,
+                FirstName = prosumer.FirstName,
+                LastName = prosumer.LastName,
+                Email = user.Email,
+                PhoneNumber = prosumer.PhoneNumber,
+                Address = prosumer.Address,
+                Status = user.Status.ToString(),
+                CreatedAt = user.CreatedAt
+            };
+        }
+
+        public async Task RequestDeactivationAsync(string userId)
+        {
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null) throw new KeyNotFoundException("User not found.");
+
+            if (user.Status == AccountStatus.Deactivated)
+                throw new InvalidOperationException("Account is already deactivated.");
+
+            if (user.Status == AccountStatus.Pending)
+                throw new InvalidOperationException("Account is already pending activation.");
+
+            user.Status = AccountStatus.Pending;
+            await _userRepository.UpdateAsync(user.Id, user);
+        }
+
+        public async Task ChangePasswordAsync(string userId, ChangePasswordRequest request)
+        {
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null) throw new KeyNotFoundException("User not found.");
+
+            if (!BCrypt.Net.BCrypt.Verify(request.OldPassword, user.PasswordHash))
+                throw new UnauthorizedAccessException("Current password is incorrect.");
+
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+            await _userRepository.UpdateAsync(user.Id, user);
+        }
     }
 }
