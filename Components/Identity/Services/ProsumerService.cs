@@ -1,4 +1,4 @@
-﻿using SmartSolarMicrogrid.API.Components.Identity.DTOs;
+using SmartSolarMicrogrid.API.Components.Identity.DTOs;
 using SmartSolarMicrogrid.API.Components.Identity.Interfaces;
 using SmartSolarMicrogrid.API.Components.Identity.Models;
 using System;
@@ -38,7 +38,7 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
 
             var prosumer = new Prosumer
             {
-                UserId = user.Id,
+                UserId = user.Id ?? string.Empty,
                 NIC = request.NIC,
                 FirstName = request.FirstName,
                 LastName = request.LastName,
@@ -49,8 +49,8 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
 
             return new ProsumerDto
             {
-                Id = prosumer.Id,
-                UserId = prosumer.UserId,
+                Id = prosumer.Id ?? string.Empty,
+                UserId = prosumer.UserId ?? string.Empty,
                 NIC = prosumer.NIC,
                 FirstName = prosumer.FirstName,
                 LastName = prosumer.LastName,
@@ -68,7 +68,7 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
             if (user != null)
             {
                 user.Status = request.Status;
-                await _userRepository.UpdateAsync(user.Id, user);
+                await _userRepository.UpdateAsync(user.Id ?? string.Empty, user);
             }
         }
 
@@ -82,8 +82,8 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
 
             return new ProsumerProfileResponse
             {
-                Id = prosumer.Id,
-                UserId = prosumer.UserId,
+                Id = prosumer.Id ?? string.Empty,
+                UserId = prosumer.UserId ?? string.Empty,
                 NIC = prosumer.NIC,
                 FirstName = prosumer.FirstName,
                 LastName = prosumer.LastName,
@@ -108,12 +108,12 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
             prosumer.PhoneNumber = request.PhoneNumber;
             prosumer.Address = request.Address;
 
-            await _prosumerRepository.UpdateAsync(prosumer.Id, prosumer);
+            await _prosumerRepository.UpdateAsync(prosumer.Id ?? string.Empty, prosumer);
 
             return new ProsumerProfileResponse
             {
-                Id = prosumer.Id,
-                UserId = prosumer.UserId,
+                Id = prosumer.Id ?? string.Empty,
+                UserId = prosumer.UserId ?? string.Empty,
                 NIC = prosumer.NIC,
                 FirstName = prosumer.FirstName,
                 LastName = prosumer.LastName,
@@ -137,7 +137,7 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
                 throw new InvalidOperationException("Account is already pending activation.");
 
             user.Status = AccountStatus.Pending;
-            await _userRepository.UpdateAsync(user.Id, user);
+            await _userRepository.UpdateAsync(user.Id ?? string.Empty, user);
         }
 
         public async Task ChangePasswordAsync(string userId, ChangePasswordRequest request)
@@ -149,7 +149,7 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
                 throw new UnauthorizedAccessException("Current password is incorrect.");
 
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
-            await _userRepository.UpdateAsync(user.Id, user);
+            await _userRepository.UpdateAsync(user.Id ?? string.Empty, user);
         }
 
         public async Task<List<ProsumerProfileResponse>> GetAllProsumersAsync(ProsumerListRequest request)
@@ -165,7 +165,7 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
                 if (request.Status.HasValue && user.Status != request.Status.Value)
                     continue;
 
-                var prosumer = await _prosumerRepository.GetByUserIdAsync(user.Id);
+                var prosumer = await _prosumerRepository.GetByUserIdAsync(user.Id ?? string.Empty);
                 if (prosumer == null) continue;
 
                 // Filter by search term if specified
@@ -182,7 +182,7 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
 
                 result.Add(new ProsumerProfileResponse
                 {
-                    Id = prosumer.Id,
+                    Id = prosumer.Id ?? string.Empty,
                     UserId = prosumer.UserId,
                     NIC = prosumer.NIC,
                     FirstName = prosumer.FirstName,
@@ -210,8 +210,8 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
 
             return new ProsumerProfileResponse
             {
-                Id = prosumer.Id,
-                UserId = prosumer.UserId,
+                Id = prosumer.Id ?? string.Empty,
+                UserId = prosumer.UserId ?? string.Empty,
                 NIC = prosumer.NIC,
                 FirstName = prosumer.FirstName,
                 LastName = prosumer.LastName,
@@ -233,8 +233,8 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
 
             return new ProsumerProfileResponse
             {
-                Id = prosumer.Id,
-                UserId = prosumer.UserId,
+                Id = prosumer.Id ?? string.Empty,
+                UserId = prosumer.UserId ?? string.Empty,
                 NIC = prosumer.NIC,
                 FirstName = prosumer.FirstName,
                 LastName = prosumer.LastName,
