@@ -63,5 +63,74 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
             user.Status = request.Status;
             await _userRepository.UpdateAsync(id, user);
         }
+
+        public async Task<UserProfileResponse> GetUserByIdAsync(string id)
+        {
+            var user = await _userRepository.GetByIdAsync(id);
+            if (user == null) throw new KeyNotFoundException("User not found.");
+
+            return new UserProfileResponse
+            {
+                Id = user.Id,
+                Email = user.Email,
+                Role = user.Role.ToString(),
+                Status = user.Status.ToString(),
+                CreatedAt = user.CreatedAt
+            };
+        }
+
+        public async Task<UserProfileResponse> UpdateUserAsync(string id, UpdateUserRequest request)
+        {
+            var user = await _userRepository.GetByIdAsync(id);
+            if (user == null) throw new KeyNotFoundException("User not found.");
+
+            // Check if email is being changed and if it already exists
+            if (user.Email != request.Email)
+            {
+                var existing = await _userRepository.GetByEmailAsync(request.Email);
+                if (existing != null && existing.Id != id)
+                    throw new InvalidOperationException("Email already exists.");
+                
+                user.Email = request.Email;
+            }
+
+            await _userRepository.UpdateAsync(id, user);
+
+            return new UserProfileResponse
+            {
+                Id = user.Id,
+                Email = user.Email,
+                Role = user.Role.ToString(),
+                Status = user.Status.ToString(),
+                CreatedAt = user.CreatedAt
+            };
+        }
+
+        public async Task<UserProfileResponse> GetCurrentUserAsync(string userId)
+        {
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null) throw new KeyNotFoundException("User not found.");
+
+            return new UserProfileResponse
+            {
+                Id = user.Id,
+                Email = user.Email,
+                Role = user.Role.ToString(),
+                Status = user.Status.ToString(),
+                CreatedAt = user.CreatedAt
+            };
+        }
+
+        public async Task ChangePasswordAsync(string userId, ChangePasswordRequest request)
+        {
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null) throw new KeyNotFoundException("User not found.");
+
+            if (!BCrypt.Net.BCrypt.Verify(request.OldPassword, user.PasswordHash))
+                throw new UnauthorizedAccessException("Current password is incorrect.");
+
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+            await _userRepository.UpdateAsync(user.Id, user);
+        }
     }
 }
