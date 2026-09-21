@@ -9,5 +9,9 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Interfaces
         Task<UserDto> CreateUserAsync(CreateUserRequest request);
         Task<List<UserDto>> GetAllUsersAsync();
         Task UpdateUserStatusAsync(string id, UpdateUserStatusRequest request);
+        Task<UserProfileResponse> GetUserByIdAsync(string id);
+        Task<UserProfileResponse> UpdateUserAsync(string id, UpdateUserRequest request);
+        Task<UserProfileResponse> GetCurrentUserAsync(string userId);
+        Task ChangePasswordAsync(string userId, ChangePasswordRequest request);
     }
 }
