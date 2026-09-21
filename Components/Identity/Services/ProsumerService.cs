@@ -32,7 +32,7 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
                 Email = request.Email,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
                 Role = Role.Prosumer,
-                Status = AccountStatus.Pending // Prosumers might need activation
+                Status = AccountStatus.Active // Changed to Active for testing
             };
             await _userRepository.CreateAsync(user);
 
