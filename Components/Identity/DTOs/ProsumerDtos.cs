@@ -51,4 +51,12 @@ namespace SmartSolarMicrogrid.API.Components.Identity.DTOs
         public string OldPassword { get; set; } = string.Empty;
         public string NewPassword { get; set; } = string.Empty;
     }
+
+    public class ProsumerListRequest
+    {
+        public AccountStatus? Status { get; set; }
+        public string? SearchTerm { get; set; }
+        public int Page { get; set; } = 1;
+        public int PageSize { get; set; } = 10;
+    }
 }

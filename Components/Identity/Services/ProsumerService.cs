@@ -2,6 +2,8 @@
 using SmartSolarMicrogrid.API.Components.Identity.Interfaces;
 using SmartSolarMicrogrid.API.Components.Identity.Models;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace SmartSolarMicrogrid.API.Components.Identity.Services
@@ -148,6 +150,100 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
 
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
             await _userRepository.UpdateAsync(user.Id, user);
+        }
+
+        public async Task<List<ProsumerProfileResponse>> GetAllProsumersAsync(ProsumerListRequest request)
+        {
+            var allUsers = await _userRepository.GetAllAsync();
+            var prosumerUsers = allUsers.Where(u => u.Role == Role.Prosumer).ToList();
+
+            var result = new List<ProsumerProfileResponse>();
+
+            foreach (var user in prosumerUsers)
+            {
+                // Filter by status if specified
+                if (request.Status.HasValue && user.Status != request.Status.Value)
+                    continue;
+
+                var prosumer = await _prosumerRepository.GetByUserIdAsync(user.Id);
+                if (prosumer == null) continue;
+
+                // Filter by search term if specified
+                if (!string.IsNullOrEmpty(request.SearchTerm))
+                {
+                    var searchTerm = request.SearchTerm.ToLower();
+                    var match = prosumer.NIC.ToLower().Contains(searchTerm) ||
+                                prosumer.FirstName.ToLower().Contains(searchTerm) ||
+                                prosumer.LastName.ToLower().Contains(searchTerm) ||
+                                user.Email.ToLower().Contains(searchTerm);
+                    
+                    if (!match) continue;
+                }
+
+                result.Add(new ProsumerProfileResponse
+                {
+                    Id = prosumer.Id,
+                    UserId = prosumer.UserId,
+                    NIC = prosumer.NIC,
+                    FirstName = prosumer.FirstName,
+                    LastName = prosumer.LastName,
+                    Email = user.Email,
+                    PhoneNumber = prosumer.PhoneNumber,
+                    Address = prosumer.Address,
+                    Status = user.Status.ToString(),
+                    CreatedAt = user.CreatedAt
+                });
+            }
+
+            // Apply pagination
+            var skip = (request.Page - 1) * request.PageSize;
+            return result.Skip(skip).Take(request.PageSize).ToList();
+        }
+
+        public async Task<ProsumerProfileResponse> GetProsumerByIdAsync(string id)
+        {
+            var prosumer = await _prosumerRepository.GetByIdAsync(id);
+            if (prosumer == null) throw new KeyNotFoundException("Prosumer not found.");
+
+            var user = await _userRepository.GetByIdAsync(prosumer.UserId);
+            if (user == null) throw new KeyNotFoundException("User not found.");
+
+            return new ProsumerProfileResponse
+            {
+                Id = prosumer.Id,
+                UserId = prosumer.UserId,
+                NIC = prosumer.NIC,
+                FirstName = prosumer.FirstName,
+                LastName = prosumer.LastName,
+                Email = user.Email,
+                PhoneNumber = prosumer.PhoneNumber,
+                Address = prosumer.Address,
+                Status = user.Status.ToString(),
+                CreatedAt = user.CreatedAt
+            };
+        }
+
+        public async Task<ProsumerProfileResponse> GetProsumerByNicAsync(string nic)
+        {
+            var prosumer = await _prosumerRepository.GetByNicAsync(nic);
+            if (prosumer == null) throw new KeyNotFoundException("Prosumer not found.");
+
+            var user = await _userRepository.GetByIdAsync(prosumer.UserId);
+            if (user == null) throw new KeyNotFoundException("User not found.");
+
+            return new ProsumerProfileResponse
+            {
+                Id = prosumer.Id,
+                UserId = prosumer.UserId,
+                NIC = prosumer.NIC,
+                FirstName = prosumer.FirstName,
+                LastName = prosumer.LastName,
+                Email = user.Email,
+                PhoneNumber = prosumer.PhoneNumber,
+                Address = prosumer.Address,
+                Status = user.Status.ToString(),
+                CreatedAt = user.CreatedAt
+            };
         }
     }
 }

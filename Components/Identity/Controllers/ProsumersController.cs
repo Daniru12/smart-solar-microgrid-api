@@ -34,6 +34,51 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Controllers
             }
         }
 
+        [HttpGet]
+        [Authorize(Roles = "Backoffice")]
+        public async Task<IActionResult> GetAllProsumers([FromQuery] ProsumerListRequest request)
+        {
+            try
+            {
+                var prosumers = await _prosumerService.GetAllProsumersAsync(request);
+                return Ok(new { Success = true, Data = prosumers });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Success = false, Message = ex.Message });
+            }
+        }
+
+        [HttpGet("{id}")]
+        [Authorize(Roles = "Backoffice")]
+        public async Task<IActionResult> GetProsumerById(string id)
+        {
+            try
+            {
+                var prosumer = await _prosumerService.GetProsumerByIdAsync(id);
+                return Ok(new { Success = true, Data = prosumer });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { Success = false, Message = ex.Message });
+            }
+        }
+
+        [HttpGet("nic/{nic}")]
+        [Authorize(Roles = "Backoffice")]
+        public async Task<IActionResult> GetProsumerByNic(string nic)
+        {
+            try
+            {
+                var prosumer = await _prosumerService.GetProsumerByNicAsync(nic);
+                return Ok(new { Success = true, Data = prosumer });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { Success = false, Message = ex.Message });
+            }
+        }
+
         [HttpPatch("{id}/status")]
         [Authorize(Roles = "Backoffice")]
         public async Task<IActionResult> UpdateStatus(string id, [FromBody] UpdateUserStatusRequest request)
