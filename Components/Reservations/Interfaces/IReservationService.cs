@@ -51,6 +51,11 @@ namespace SmartSolarMicrogrid.API.Components.Reservations.Interfaces
         Task<ReservationResponseDto> ApproveReservationAsync(string id);
 
         /// <summary>
+        /// Completes an Approved reservation (e.g. after QR scan). Sets status to Completed.
+        /// </summary>
+        Task<ReservationResponseDto> CompleteReservationAsync(string id);
+
+        /// <summary>
         /// Hard deletes a reservation from the database.
         /// Only accessible by Backoffice role.
         /// </summary>
@@ -88,3 +93,4 @@ namespace SmartSolarMicrogrid.API.Components.Reservations.Interfaces
         Task<bool> HasActiveReservationsForStationAsync(string stationId);
     }
 }
+

@@ -18,7 +18,8 @@ namespace SmartSolarMicrogrid.API.Components.Reservations.Models
     /// </summary>
     public class EnergyReservation
     {
-        /// <summary>MongoDB primary key (_id).</summary>
+        /// <summary>M
+        /// ongoDB primary key (_id).</summary>
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
         public string? Id { get; set; }

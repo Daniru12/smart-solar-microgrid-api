@@ -176,6 +176,23 @@ namespace SmartSolarMicrogrid.API.Components.Reservations.Services
         ///   - At least 12 hours must remain before the reservation.
         ///   - Only Pending or Approved reservations can be cancelled.
         /// </summary>
+        public async Task<ReservationResponseDto> CompleteReservationAsync(string id)
+        {
+            var existing = await _repository.GetByIdAsync(id)
+                ?? throw new KeyNotFoundException("Reservation with ID '{id}' not found.");
+
+            if (existing.Status != ReservationStatus.Approved)
+                throw new InvalidOperationException(
+                    "Only Approved reservations can be completed. Current status: {existing.Status}.");
+
+            existing.Status = ReservationStatus.Completed;
+            existing.CompletedAt = DateTime.UtcNow;
+            existing.UpdatedAt = DateTime.UtcNow;
+
+            await _repository.UpdateAsync(id, existing);
+            return MapToDto(existing);
+        }
+
         public async Task<ReservationResponseDto> CancelReservationAsync(string id)
         {
             var existing = await _repository.GetByIdAsync(id)
@@ -335,4 +352,5 @@ namespace SmartSolarMicrogrid.API.Components.Reservations.Services
         }
     }
 }
+
 
