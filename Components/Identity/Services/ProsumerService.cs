@@ -245,5 +245,64 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
                 CreatedAt = user.CreatedAt
             };
         }
+
+        public async Task<List<ProsumerProfileResponse>> GetDeactivationRequestsAsync()
+        {
+            var allUsers = await _userRepository.GetAllAsync();
+            var prosumerUsers = allUsers.Where(u => u.Role == Role.Prosumer && u.Status == AccountStatus.Pending).ToList();
+
+            var result = new List<ProsumerProfileResponse>();
+            foreach (var user in prosumerUsers)
+            {
+                var prosumer = await _prosumerRepository.GetByUserIdAsync(user.Id);
+                if (prosumer != null)
+                {
+                    result.Add(new ProsumerProfileResponse
+                    {
+                        Id = prosumer.Id,
+                        UserId = prosumer.UserId,
+                        NIC = prosumer.NIC,
+                        FirstName = prosumer.FirstName,
+                        LastName = prosumer.LastName,
+                        Email = user.Email,
+                        PhoneNumber = prosumer.PhoneNumber,
+                        Address = prosumer.Address,
+                        Status = user.Status.ToString(),
+                        CreatedAt = user.CreatedAt
+                    });
+                }
+            }
+            return result;
+        }
+
+        public async Task ApproveDeactivationAsync(string id)
+        {
+            var prosumer = await _prosumerRepository.GetByIdAsync(id);
+            if (prosumer == null) throw new KeyNotFoundException("Prosumer not found.");
+
+            var user = await _userRepository.GetByIdAsync(prosumer.UserId);
+            if (user == null) throw new KeyNotFoundException("User not found.");
+
+            if (user.Status != AccountStatus.Pending)
+                throw new InvalidOperationException("Can only approve pending deactivation requests.");
+
+            user.Status = AccountStatus.Deactivated;
+            await _userRepository.UpdateAsync(user.Id, user);
+        }
+
+        public async Task RejectDeactivationAsync(string id)
+        {
+            var prosumer = await _prosumerRepository.GetByIdAsync(id);
+            if (prosumer == null) throw new KeyNotFoundException("Prosumer not found.");
+
+            var user = await _userRepository.GetByIdAsync(prosumer.UserId);
+            if (user == null) throw new KeyNotFoundException("User not found.");
+
+            if (user.Status != AccountStatus.Pending)
+                throw new InvalidOperationException("Can only reject pending deactivation requests.");
+
+            user.Status = AccountStatus.Active;
+            await _userRepository.UpdateAsync(user.Id, user);
+        }
     }
 }
