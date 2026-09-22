@@ -48,6 +48,11 @@ builder.Services.AddScoped<SmartSolarMicrogrid.API.Components.Identity.Interface
 builder.Services.AddScoped<SmartSolarMicrogrid.API.Components.Identity.Interfaces.IUserService, SmartSolarMicrogrid.API.Components.Identity.Services.UserService>();
 builder.Services.AddScoped<SmartSolarMicrogrid.API.Components.Identity.Interfaces.IProsumerService, SmartSolarMicrogrid.API.Components.Identity.Services.ProsumerService>();
 
+// Add Microgrid Component DI
+builder.Services.AddScoped<SmartSolarMicrogrid.API.Components.Microgrid.Interfaces.IMicrogridStationRepository, SmartSolarMicrogrid.API.Components.Microgrid.Repositories.MicrogridStationRepository>();
+builder.Services.AddScoped<SmartSolarMicrogrid.API.Components.Microgrid.Interfaces.IEnergySlotRepository, SmartSolarMicrogrid.API.Components.Microgrid.Repositories.EnergySlotRepository>();
+builder.Services.AddScoped<SmartSolarMicrogrid.API.Components.Microgrid.Interfaces.IMicrogridService, SmartSolarMicrogrid.API.Components.Microgrid.Services.MicrogridService>();
+
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
