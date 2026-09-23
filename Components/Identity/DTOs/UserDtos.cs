@@ -21,7 +21,7 @@ namespace SmartSolarMicrogrid.API.Components.Identity.DTOs
 
     public class UpdateUserStatusRequest
     {
-        public AccountStatus Status { get; set; }
+        public string Status { get; set; } = string.Empty;
     }
 
     public class UpdateUserRequest

@@ -60,7 +60,16 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
             var user = await _userRepository.GetByIdAsync(id);
             if (user == null) throw new KeyNotFoundException("User not found.");
 
-            user.Status = request.Status;
+            // Parse string status to AccountStatus enum
+            if (Enum.TryParse<AccountStatus>(request.Status, out var status))
+            {
+                user.Status = status;
+            }
+            else
+            {
+                throw new ArgumentException($"Invalid status value: {request.Status}");
+            }
+
             await _userRepository.UpdateAsync(id, user);
         }
 
