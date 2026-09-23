@@ -155,6 +155,59 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Controllers
             }
         }
 
+        [HttpGet("deactivation-requests")]
+        [Authorize(Roles = "Backoffice")]
+        public async Task<IActionResult> GetDeactivationRequests()
+        {
+            try
+            {
+                var requests = await _prosumerService.GetDeactivationRequestsAsync();
+                return Ok(new { Success = true, Data = requests });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Success = false, Message = ex.Message });
+            }
+        }
+
+        [HttpPost("{id}/approve-deactivation")]
+        [Authorize(Roles = "Backoffice")]
+        public async Task<IActionResult> ApproveDeactivation(string id)
+        {
+            try
+            {
+                await _prosumerService.ApproveDeactivationAsync(id);
+                return Ok(new { Success = true, Message = "Deactivation approved successfully." });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { Success = false, Message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { Success = false, Message = ex.Message });
+            }
+        }
+
+        [HttpPost("{id}/reject-deactivation")]
+        [Authorize(Roles = "Backoffice")]
+        public async Task<IActionResult> RejectDeactivation(string id)
+        {
+            try
+            {
+                await _prosumerService.RejectDeactivationAsync(id);
+                return Ok(new { Success = true, Message = "Deactivation rejected successfully." });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { Success = false, Message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { Success = false, Message = ex.Message });
+            }
+        }
+
         [HttpPost("me/change-password")]
         [Authorize(Roles = "Prosumer")]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
