@@ -13,5 +13,6 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Interfaces
         Task<UserProfileResponse> UpdateUserAsync(string id, UpdateUserRequest request);
         Task<UserProfileResponse> GetCurrentUserAsync(string userId);
         Task ChangePasswordAsync(string userId, ChangePasswordRequest request);
+        Task ResetPasswordAsync(string id, ResetPasswordRequest request);
     }
 }

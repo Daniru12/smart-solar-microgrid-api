@@ -92,6 +92,21 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Controllers
             }
         }
 
+        [HttpPost("{id}/reset-password")]
+        [Authorize(Roles = "Backoffice")]
+        public async Task<IActionResult> ResetPassword(string id, [FromBody] ResetPasswordRequest request)
+        {
+            try
+            {
+                await _userService.ResetPasswordAsync(id, request);
+                return Ok(new { Success = true, Message = "Password reset successfully." });
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound(new { Success = false, Message = "User not found." });
+            }
+        }
+
         [HttpGet("me")]
         [Authorize]
         public async Task<IActionResult> GetCurrentUser()

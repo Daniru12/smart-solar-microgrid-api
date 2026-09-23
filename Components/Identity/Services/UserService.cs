@@ -103,6 +103,32 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
                 user.Email = request.Email;
             }
 
+            // Update role if provided
+            if (!string.IsNullOrEmpty(request.Role))
+            {
+                if (Enum.TryParse<Role>(request.Role, out var role))
+                {
+                    user.Role = role;
+                }
+                else
+                {
+                    throw new ArgumentException($"Invalid role value: {request.Role}");
+                }
+            }
+
+            // Update status if provided
+            if (!string.IsNullOrEmpty(request.Status))
+            {
+                if (Enum.TryParse<AccountStatus>(request.Status, out var status))
+                {
+                    user.Status = status;
+                }
+                else
+                {
+                    throw new ArgumentException($"Invalid status value: {request.Status}");
+                }
+            }
+
             await _userRepository.UpdateAsync(id, user);
 
             return new UserProfileResponse
@@ -140,6 +166,15 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
 
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
             await _userRepository.UpdateAsync(user.Id, user);
+        }
+
+        public async Task ResetPasswordAsync(string id, ResetPasswordRequest request)
+        {
+            var user = await _userRepository.GetByIdAsync(id);
+            if (user == null) throw new KeyNotFoundException("User not found.");
+
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+            await _userRepository.UpdateAsync(id, user);
         }
     }
 }

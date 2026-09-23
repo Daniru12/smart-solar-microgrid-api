@@ -27,6 +27,13 @@ namespace SmartSolarMicrogrid.API.Components.Identity.DTOs
     public class UpdateUserRequest
     {
         public string Email { get; set; } = string.Empty;
+        public string Role { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+    }
+
+    public class ResetPasswordRequest
+    {
+        public string NewPassword { get; set; } = string.Empty;
     }
 
     public class UserProfileResponse
