@@ -1,5 +1,6 @@
-﻿using SmartSolarMicrogrid.API.Components.Identity.Models;
+using SmartSolarMicrogrid.API.Components.Identity.Models;
 using System;
+using System.Collections.Generic;
 
 namespace SmartSolarMicrogrid.API.Components.Identity.DTOs
 {
@@ -43,5 +44,25 @@ namespace SmartSolarMicrogrid.API.Components.Identity.DTOs
         public string Role { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
+    }
+
+    // Role-based tab permission DTOs
+    public class UpdateRoleTabPermissionsRequest
+    {
+        /// <summary>
+        /// List of tab keys to make visible for the role.
+        /// Pass null to restore default (all tabs visible).
+        /// </summary>
+        public List<string>? VisibleTabs { get; set; }
+    }
+
+    public class RoleTabPermissionsResponse
+    {
+        public string Role { get; set; } = string.Empty;
+        /// <summary>
+        /// Null means all tabs are visible (no restriction applied).
+        /// </summary>
+        public List<string>? VisibleTabs { get; set; }
+        public DateTime? UpdatedAt { get; set; }
     }
 }
