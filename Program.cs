@@ -47,6 +47,8 @@ builder.Services.AddScoped<SmartSolarMicrogrid.API.Components.Identity.Interface
 builder.Services.AddScoped<SmartSolarMicrogrid.API.Components.Identity.Interfaces.IAuthService, SmartSolarMicrogrid.API.Components.Identity.Services.AuthService>();
 builder.Services.AddScoped<SmartSolarMicrogrid.API.Components.Identity.Interfaces.IUserService, SmartSolarMicrogrid.API.Components.Identity.Services.UserService>();
 builder.Services.AddScoped<SmartSolarMicrogrid.API.Components.Identity.Interfaces.IProsumerService, SmartSolarMicrogrid.API.Components.Identity.Services.ProsumerService>();
+builder.Services.AddScoped<SmartSolarMicrogrid.API.Components.Identity.Interfaces.IRoleTabPermissionsRepository, SmartSolarMicrogrid.API.Components.Identity.Repositories.RoleTabPermissionsRepository>();
+builder.Services.AddScoped<SmartSolarMicrogrid.API.Components.Identity.Interfaces.IRoleTabPermissionsService, SmartSolarMicrogrid.API.Components.Identity.Services.RoleTabPermissionsService>();
 
 // Add Microgrid Component DI
 builder.Services.AddScoped<SmartSolarMicrogrid.API.Components.Microgrid.Interfaces.IMicrogridStationRepository, SmartSolarMicrogrid.API.Components.Microgrid.Repositories.MicrogridStationRepository>();
