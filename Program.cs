@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Options;
 using SmartSolarMicrogrid.API.Infrastructure.MongoDB;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -55,12 +55,17 @@ builder.Services.AddScoped<SmartSolarMicrogrid.API.Components.Microgrid.Interfac
 builder.Services.AddScoped<SmartSolarMicrogrid.API.Components.Microgrid.Interfaces.IEnergySlotRepository, SmartSolarMicrogrid.API.Components.Microgrid.Repositories.EnergySlotRepository>();
 builder.Services.AddScoped<SmartSolarMicrogrid.API.Components.Microgrid.Interfaces.IMicrogridService, SmartSolarMicrogrid.API.Components.Microgrid.Services.MicrogridService>();
 
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+
+builder.Services.AddScoped<SmartSolarMicrogrid.API.Components.Reservations.Interfaces.IReservationRepository, SmartSolarMicrogrid.API.Components.Reservations.Repositories.ReservationRepository>();
+builder.Services.AddScoped<SmartSolarMicrogrid.API.Components.Reservations.Interfaces.IReservationService, SmartSolarMicrogrid.API.Components.Reservations.Services.ReservationService>();
+builder.Services.AddScoped<SmartSolarMicrogrid.API.Components.Microgrid.Interfaces.IReservationChecker, SmartSolarMicrogrid.API.Components.Reservations.Services.ReservationService>();
+
+
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
-// Test MongoDB Connection on Startup
+
 try
 {
     var settings = app.Services.GetRequiredService<MongoDbSettings>();
@@ -103,3 +108,4 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
