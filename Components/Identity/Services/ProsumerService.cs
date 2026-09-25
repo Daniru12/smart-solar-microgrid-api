@@ -1,4 +1,4 @@
-using SmartSolarMicrogrid.API.Components.Identity.DTOs;
+﻿using SmartSolarMicrogrid.API.Components.Identity.DTOs;
 using SmartSolarMicrogrid.API.Components.Identity.Interfaces;
 using SmartSolarMicrogrid.API.Components.Identity.Models;
 using System;
@@ -32,13 +32,13 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
                 Email = request.Email,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
                 Role = Role.Prosumer,
-                Status = AccountStatus.Pending // Prosumers might need activation
+                Status = AccountStatus.Active // Changed to Active for testing
             };
             await _userRepository.CreateAsync(user);
 
             var prosumer = new Prosumer
             {
-                UserId = user.Id ?? string.Empty,
+                UserId = user.Id,
                 NIC = request.NIC,
                 FirstName = request.FirstName,
                 LastName = request.LastName,
@@ -49,8 +49,8 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
 
             return new ProsumerDto
             {
-                Id = prosumer.Id ?? string.Empty,
-                UserId = prosumer.UserId ?? string.Empty,
+                Id = prosumer.Id,
+                UserId = prosumer.UserId,
                 NIC = prosumer.NIC,
                 FirstName = prosumer.FirstName,
                 LastName = prosumer.LastName,
@@ -67,8 +67,17 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
             var user = await _userRepository.GetByIdAsync(prosumer.UserId);
             if (user != null)
             {
-                user.Status = request.Status;
-                await _userRepository.UpdateAsync(user.Id ?? string.Empty, user);
+                // Parse string status to AccountStatus enum
+                if (Enum.TryParse<AccountStatus>(request.Status, out var status))
+                {
+                    user.Status = status;
+                }
+                else
+                {
+                    throw new ArgumentException($"Invalid status value: {request.Status}");
+                }
+
+                await _userRepository.UpdateAsync(user.Id, user);
             }
         }
 
@@ -82,8 +91,8 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
 
             return new ProsumerProfileResponse
             {
-                Id = prosumer.Id ?? string.Empty,
-                UserId = prosumer.UserId ?? string.Empty,
+                Id = prosumer.Id,
+                UserId = prosumer.UserId,
                 NIC = prosumer.NIC,
                 FirstName = prosumer.FirstName,
                 LastName = prosumer.LastName,
@@ -108,12 +117,12 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
             prosumer.PhoneNumber = request.PhoneNumber;
             prosumer.Address = request.Address;
 
-            await _prosumerRepository.UpdateAsync(prosumer.Id ?? string.Empty, prosumer);
+            await _prosumerRepository.UpdateAsync(prosumer.Id, prosumer);
 
             return new ProsumerProfileResponse
             {
-                Id = prosumer.Id ?? string.Empty,
-                UserId = prosumer.UserId ?? string.Empty,
+                Id = prosumer.Id,
+                UserId = prosumer.UserId,
                 NIC = prosumer.NIC,
                 FirstName = prosumer.FirstName,
                 LastName = prosumer.LastName,
@@ -137,7 +146,7 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
                 throw new InvalidOperationException("Account is already pending activation.");
 
             user.Status = AccountStatus.Pending;
-            await _userRepository.UpdateAsync(user.Id ?? string.Empty, user);
+            await _userRepository.UpdateAsync(user.Id, user);
         }
 
         public async Task ChangePasswordAsync(string userId, ChangePasswordRequest request)
@@ -149,7 +158,7 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
                 throw new UnauthorizedAccessException("Current password is incorrect.");
 
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
-            await _userRepository.UpdateAsync(user.Id ?? string.Empty, user);
+            await _userRepository.UpdateAsync(user.Id, user);
         }
 
         public async Task<List<ProsumerProfileResponse>> GetAllProsumersAsync(ProsumerListRequest request)
@@ -165,7 +174,7 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
                 if (request.Status.HasValue && user.Status != request.Status.Value)
                     continue;
 
-                var prosumer = await _prosumerRepository.GetByUserIdAsync(user.Id ?? string.Empty);
+                var prosumer = await _prosumerRepository.GetByUserIdAsync(user.Id);
                 if (prosumer == null) continue;
 
                 // Filter by search term if specified
@@ -182,7 +191,7 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
 
                 result.Add(new ProsumerProfileResponse
                 {
-                    Id = prosumer.Id ?? string.Empty,
+                    Id = prosumer.Id,
                     UserId = prosumer.UserId,
                     NIC = prosumer.NIC,
                     FirstName = prosumer.FirstName,
@@ -210,8 +219,8 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
 
             return new ProsumerProfileResponse
             {
-                Id = prosumer.Id ?? string.Empty,
-                UserId = prosumer.UserId ?? string.Empty,
+                Id = prosumer.Id,
+                UserId = prosumer.UserId,
                 NIC = prosumer.NIC,
                 FirstName = prosumer.FirstName,
                 LastName = prosumer.LastName,
@@ -233,8 +242,8 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
 
             return new ProsumerProfileResponse
             {
-                Id = prosumer.Id ?? string.Empty,
-                UserId = prosumer.UserId ?? string.Empty,
+                Id = prosumer.Id,
+                UserId = prosumer.UserId,
                 NIC = prosumer.NIC,
                 FirstName = prosumer.FirstName,
                 LastName = prosumer.LastName,
@@ -244,6 +253,65 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
                 Status = user.Status.ToString(),
                 CreatedAt = user.CreatedAt
             };
+        }
+
+        public async Task<List<ProsumerProfileResponse>> GetDeactivationRequestsAsync()
+        {
+            var allUsers = await _userRepository.GetAllAsync();
+            var prosumerUsers = allUsers.Where(u => u.Role == Role.Prosumer && u.Status == AccountStatus.Pending).ToList();
+
+            var result = new List<ProsumerProfileResponse>();
+            foreach (var user in prosumerUsers)
+            {
+                var prosumer = await _prosumerRepository.GetByUserIdAsync(user.Id);
+                if (prosumer != null)
+                {
+                    result.Add(new ProsumerProfileResponse
+                    {
+                        Id = prosumer.Id,
+                        UserId = prosumer.UserId,
+                        NIC = prosumer.NIC,
+                        FirstName = prosumer.FirstName,
+                        LastName = prosumer.LastName,
+                        Email = user.Email,
+                        PhoneNumber = prosumer.PhoneNumber,
+                        Address = prosumer.Address,
+                        Status = user.Status.ToString(),
+                        CreatedAt = user.CreatedAt
+                    });
+                }
+            }
+            return result;
+        }
+
+        public async Task ApproveDeactivationAsync(string id)
+        {
+            var prosumer = await _prosumerRepository.GetByIdAsync(id);
+            if (prosumer == null) throw new KeyNotFoundException("Prosumer not found.");
+
+            var user = await _userRepository.GetByIdAsync(prosumer.UserId);
+            if (user == null) throw new KeyNotFoundException("User not found.");
+
+            if (user.Status != AccountStatus.Pending)
+                throw new InvalidOperationException("Can only approve pending deactivation requests.");
+
+            user.Status = AccountStatus.Deactivated;
+            await _userRepository.UpdateAsync(user.Id, user);
+        }
+
+        public async Task RejectDeactivationAsync(string id)
+        {
+            var prosumer = await _prosumerRepository.GetByIdAsync(id);
+            if (prosumer == null) throw new KeyNotFoundException("Prosumer not found.");
+
+            var user = await _userRepository.GetByIdAsync(prosumer.UserId);
+            if (user == null) throw new KeyNotFoundException("User not found.");
+
+            if (user.Status != AccountStatus.Pending)
+                throw new InvalidOperationException("Can only reject pending deactivation requests.");
+
+            user.Status = AccountStatus.Active;
+            await _userRepository.UpdateAsync(user.Id, user);
         }
     }
 }

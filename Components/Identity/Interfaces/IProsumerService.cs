@@ -15,5 +15,8 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Interfaces
         Task<List<ProsumerProfileResponse>> GetAllProsumersAsync(ProsumerListRequest request);
         Task<ProsumerProfileResponse> GetProsumerByIdAsync(string id);
         Task<ProsumerProfileResponse> GetProsumerByNicAsync(string nic);
+        Task<List<ProsumerProfileResponse>> GetDeactivationRequestsAsync();
+        Task ApproveDeactivationAsync(string id);
+        Task RejectDeactivationAsync(string id);
     }
 }
