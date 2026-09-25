@@ -13,11 +13,13 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
     public class AuthService : IAuthService
     {
         private readonly IUserRepository _userRepository;
+        private readonly IProsumerRepository _prosumerRepository;
         private readonly IConfiguration _configuration;
 
-        public AuthService(IUserRepository userRepository, IConfiguration configuration)
+        public AuthService(IUserRepository userRepository, IProsumerRepository prosumerRepository, IConfiguration configuration)
         {
             _userRepository = userRepository;
+            _prosumerRepository = prosumerRepository;
             _configuration = configuration;
         }
 
@@ -52,11 +54,31 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
             
             var token = tokenHandler.CreateToken(tokenDescriptor);
 
+            string? nic = null;
+            string? name = null;
+
+            if (user.Role == Models.Role.Prosumer)
+            {
+                var prosumer = await _prosumerRepository.GetByUserIdAsync(user.Id ?? "");
+                if (prosumer != null)
+                {
+                    nic = prosumer.NIC;
+                    name = $"{prosumer.FirstName} {prosumer.LastName}".Trim();
+                }
+            }
+            else if (user.Role == Models.Role.GridOperator)
+            {
+                name = "Grid Operator";
+            }
+
             return new LoginResponse
             {
                 Token = tokenHandler.WriteToken(token),
                 UserId = user.Id ?? string.Empty,
-                Role = user.Role.ToString()
+                Role = user.Role.ToString(),
+                Email = user.Email,
+                Nic = nic,
+                Name = name
             };
         }
     }
