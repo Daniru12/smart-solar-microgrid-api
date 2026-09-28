@@ -1,4 +1,4 @@
-﻿/*
+/*
  * File: ReservationService.cs
  * Author: Upasama (Member 3 - Reservation & Booking Management)
  * Description: FAT Service implementation for all reservation business logic.
@@ -28,13 +28,15 @@ namespace SmartSolarMicrogrid.API.Components.Reservations.Services
     public class ReservationService : IReservationService, IReservationChecker
     {
         private readonly IReservationRepository _repository;
+        private readonly IEnergySlotRepository _slotRepository;
 
         /// <summary>
         /// Constructor: IReservationRepository injected via ASP.NET Core DI container.
         /// </summary>
-        public ReservationService(IReservationRepository repository)
+        public ReservationService(IReservationRepository repository, IEnergySlotRepository slotRepository)
         {
             _repository = repository;
+            _slotRepository = slotRepository;
         }
 
         // ============================================================
@@ -84,12 +86,12 @@ namespace SmartSolarMicrogrid.API.Components.Reservations.Services
                 throw new InvalidOperationException(
                     "Reservation must be scheduled within 7 days from today.");
 
-            // --- Business Rule: No double-booking the same slot on the same date ---
-            var isConflicting = await _repository.HasConflictingReservationForSlotAsync(
-                dto.SlotId, dto.ReservationDate);
-            if (isConflicting)
-                throw new InvalidOperationException(
-                    "This slot is already booked for the selected date. Please choose a different slot or date.");
+            // --- Business Rule: Ensure slot exists and has enough capacity ---
+            var slot = await _slotRepository.GetSlotByIdAsync(dto.SlotId)
+                ?? throw new InvalidOperationException("The selected slot does not exist.");
+
+            if (slot.AvailableCapacity < dto.EnergyAmountKwh)
+                throw new InvalidOperationException($"Not enough capacity in the slot. Requested: {dto.EnergyAmountKwh} kWh, Available: {slot.AvailableCapacity} kWh.");
 
             // Build document
             var reservation = new EnergyReservation
@@ -111,6 +113,12 @@ namespace SmartSolarMicrogrid.API.Components.Reservations.Services
             };
 
             var created = await _repository.CreateAsync(reservation);
+
+            // Update slot capacity
+            slot.AvailableCapacity -= dto.EnergyAmountKwh;
+            if (slot.AvailableCapacity <= 0) slot.Status = "Full";
+            await _slotRepository.UpdateSlotAsync(slot.SlotId, slot);
+
             return MapToDto(created);
         }
 
@@ -159,6 +167,39 @@ namespace SmartSolarMicrogrid.API.Components.Reservations.Services
                         "The new slot is already booked for the selected date.");
             }
 
+            // Handle capacity changes
+            var oldSlot = await _slotRepository.GetSlotByIdAsync(existing.SlotId);
+            var newSlot = dto.SlotId == existing.SlotId ? oldSlot : await _slotRepository.GetSlotByIdAsync(dto.SlotId);
+
+            if (newSlot == null) throw new InvalidOperationException("The new selected slot does not exist.");
+
+            if (dto.SlotId == existing.SlotId)
+            {
+                double diff = dto.EnergyAmountKwh - existing.EnergyAmountKwh;
+                if (newSlot.AvailableCapacity < diff)
+                    throw new InvalidOperationException($"Not enough capacity. Need {diff} more kWh, but only {newSlot.AvailableCapacity} available.");
+                
+                newSlot.AvailableCapacity -= diff;
+                newSlot.Status = newSlot.AvailableCapacity <= 0 ? "Full" : "Available";
+                await _slotRepository.UpdateSlotAsync(newSlot.SlotId, newSlot);
+            }
+            else
+            {
+                if (newSlot.AvailableCapacity < dto.EnergyAmountKwh)
+                    throw new InvalidOperationException($"Not enough capacity in the new slot.");
+                
+                if (oldSlot != null)
+                {
+                    oldSlot.AvailableCapacity += existing.EnergyAmountKwh;
+                    oldSlot.Status = oldSlot.AvailableCapacity > 0 ? "Available" : "Full";
+                    await _slotRepository.UpdateSlotAsync(oldSlot.SlotId, oldSlot);
+                }
+
+                newSlot.AvailableCapacity -= dto.EnergyAmountKwh;
+                newSlot.Status = newSlot.AvailableCapacity <= 0 ? "Full" : "Available";
+                await _slotRepository.UpdateSlotAsync(newSlot.SlotId, newSlot);
+            }
+
             // Apply updates
             existing.SlotId = dto.SlotId;
             existing.ReservationDate = dto.ReservationDate.ToUniversalTime();
@@ -176,14 +217,17 @@ namespace SmartSolarMicrogrid.API.Components.Reservations.Services
         ///   - At least 12 hours must remain before the reservation.
         ///   - Only Pending or Approved reservations can be cancelled.
         /// </summary>
-        public async Task<ReservationResponseDto> CompleteReservationAsync(string id)
+        public async Task<ReservationResponseDto> CompleteReservationAsync(string id, string? operatorStationId = null)
         {
             var existing = await _repository.GetByIdAsync(id)
-                ?? throw new KeyNotFoundException("Reservation with ID '{id}' not found.");
+                ?? throw new KeyNotFoundException($"Reservation with ID '{id}' not found.");
+
+            if (!string.IsNullOrEmpty(operatorStationId) && existing.StationId != operatorStationId)
+                throw new UnauthorizedAccessException("You are not authorized to complete reservations for this station.");
 
             if (existing.Status != ReservationStatus.Approved)
                 throw new InvalidOperationException(
-                    "Only Approved reservations can be completed. Current status: {existing.Status}.");
+                    $"Only Approved reservations can be completed. Current status: {existing.Status}.");
 
             existing.Status = ReservationStatus.Completed;
             existing.CompletedAt = DateTime.UtcNow;
@@ -193,10 +237,13 @@ namespace SmartSolarMicrogrid.API.Components.Reservations.Services
             return MapToDto(existing);
         }
 
-        public async Task<ReservationResponseDto> CancelReservationAsync(string id)
+        public async Task<ReservationResponseDto> CancelReservationAsync(string id, string? operatorStationId = null)
         {
             var existing = await _repository.GetByIdAsync(id)
                 ?? throw new KeyNotFoundException($"Reservation with ID '{id}' not found.");
+
+            if (!string.IsNullOrEmpty(operatorStationId) && existing.StationId != operatorStationId)
+                throw new UnauthorizedAccessException("You are not authorized to cancel reservations for this station.");
 
             // --- Business Rule: Only Pending or Approved can be cancelled ---
             if (existing.Status == ReservationStatus.Cancelled)
@@ -218,6 +265,16 @@ namespace SmartSolarMicrogrid.API.Components.Reservations.Services
             existing.UpdatedAt = DateTime.UtcNow;
 
             await _repository.UpdateAsync(id, existing);
+
+            // Restore capacity
+            var slot = await _slotRepository.GetSlotByIdAsync(existing.SlotId);
+            if (slot != null)
+            {
+                slot.AvailableCapacity += existing.EnergyAmountKwh;
+                if (slot.AvailableCapacity > 0) slot.Status = "Available";
+                await _slotRepository.UpdateSlotAsync(slot.SlotId, slot);
+            }
+
             return MapToDto(existing);
         }
 
@@ -226,13 +283,39 @@ namespace SmartSolarMicrogrid.API.Components.Reservations.Services
         // ============================================================
 
         /// <summary>
+        /// Validates a QR code for energy transfer.
+        /// </summary>
+        public async Task<ReservationResponseDto> ValidateQrAsync(string id, string? operatorStationId = null)
+        {
+            var existing = await _repository.GetByIdAsync(id)
+                ?? throw new KeyNotFoundException("Invalid QR: Reservation not found.");
+
+            if (!string.IsNullOrEmpty(operatorStationId) && existing.StationId != operatorStationId)
+                throw new UnauthorizedAccessException("Invalid QR: You are not authorized to validate reservations for this station.");
+
+            if (existing.Status == ReservationStatus.Cancelled)
+                throw new InvalidOperationException("Invalid QR: Reservation is cancelled.");
+
+            if (existing.Status == ReservationStatus.Completed)
+                throw new InvalidOperationException("Invalid QR: Energy transfer already completed.");
+
+            if (existing.Status != ReservationStatus.Approved)
+                throw new InvalidOperationException($"Invalid QR: Reservation is not approved. Current status: {existing.Status}.");
+
+            return MapToDto(existing);
+        }
+
+        /// <summary>
         /// Approves a Pending reservation - sets Status = Approved.
         /// Role enforcement (Backoffice/GridOperator only) is done in the Controller via [Authorize].
         /// </summary>
-        public async Task<ReservationResponseDto> ApproveReservationAsync(string id)
+        public async Task<ReservationResponseDto> ApproveReservationAsync(string id, string? operatorStationId = null)
         {
             var existing = await _repository.GetByIdAsync(id)
                 ?? throw new KeyNotFoundException($"Reservation with ID '{id}' not found.");
+
+            if (!string.IsNullOrEmpty(operatorStationId) && existing.StationId != operatorStationId)
+                throw new UnauthorizedAccessException("You are not authorized to approve reservations for this station.");
 
             if (existing.Status != ReservationStatus.Pending)
                 throw new InvalidOperationException(
@@ -255,6 +338,17 @@ namespace SmartSolarMicrogrid.API.Components.Reservations.Services
             var existing = await _repository.GetByIdAsync(id)
                 ?? throw new KeyNotFoundException($"Reservation with ID '{id}' not found.");
 
+            if (existing.Status == ReservationStatus.Pending || existing.Status == ReservationStatus.Approved)
+            {
+                var slot = await _slotRepository.GetSlotByIdAsync(existing.SlotId);
+                if (slot != null)
+                {
+                    slot.AvailableCapacity += existing.EnergyAmountKwh;
+                    if (slot.AvailableCapacity > 0) slot.Status = "Available";
+                    await _slotRepository.UpdateSlotAsync(slot.SlotId, slot);
+                }
+            }
+
             await _repository.DeleteAsync(id);
         }
 
@@ -271,9 +365,11 @@ namespace SmartSolarMicrogrid.API.Components.Reservations.Services
         }
 
         /// <summary>Returns all reservations (admin view).</summary>
-        public async Task<List<ReservationResponseDto>> GetAllAsync()
+        public async Task<List<ReservationResponseDto>> GetAllAsync(string? operatorStationId = null)
         {
             var reservations = await _repository.GetAllAsync();
+            if (!string.IsNullOrEmpty(operatorStationId))
+                reservations = reservations.Where(r => r.StationId == operatorStationId).ToList();
             return reservations.Select(MapToDto).ToList();
         }
 
@@ -285,9 +381,11 @@ namespace SmartSolarMicrogrid.API.Components.Reservations.Services
         }
 
         /// <summary>Returns all Pending reservations sorted oldest first.</summary>
-        public async Task<List<ReservationResponseDto>> GetPendingAsync()
+        public async Task<List<ReservationResponseDto>> GetPendingAsync(string? operatorStationId = null)
         {
             var reservations = await _repository.GetPendingAsync();
+            if (!string.IsNullOrEmpty(operatorStationId))
+                reservations = reservations.Where(r => r.StationId == operatorStationId).ToList();
             return reservations.Select(MapToDto).ToList();
         }
 
@@ -295,7 +393,7 @@ namespace SmartSolarMicrogrid.API.Components.Reservations.Services
         /// Flexible search with optional filters.
         /// Delegates to repository's dynamic MongoDB filter builder.
         /// </summary>
-        public async Task<List<ReservationResponseDto>> SearchAsync(ReservationSearchDto searchDto)
+        public async Task<List<ReservationResponseDto>> SearchAsync(ReservationSearchDto searchDto, string? operatorStationId = null)
         {
             var reservations = await _repository.SearchAsync(
                 searchDto.Nic,
@@ -303,15 +401,18 @@ namespace SmartSolarMicrogrid.API.Components.Reservations.Services
                 searchDto.Status,
                 searchDto.From,
                 searchDto.To);
+            
+            if (!string.IsNullOrEmpty(operatorStationId))
+                reservations = reservations.Where(r => r.StationId == operatorStationId).ToList();
 
             return reservations.Select(MapToDto).ToList();
         }
 
         /// <summary>Returns dashboard counts for pending and approved future reservations.</summary>
-        public async Task<DashboardSummaryDto> GetDashboardSummaryAsync()
+        public async Task<DashboardSummaryDto> GetDashboardSummaryAsync(string? operatorStationId = null)
         {
-            var pendingCount = await _repository.CountPendingAsync();
-            var approvedFutureCount = await _repository.CountApprovedFutureAsync();
+            var pendingCount = await _repository.CountPendingAsync(operatorStationId);
+            var approvedFutureCount = await _repository.CountApprovedFutureAsync(operatorStationId);
 
             return new DashboardSummaryDto
             {

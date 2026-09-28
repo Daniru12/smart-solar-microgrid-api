@@ -16,10 +16,18 @@ namespace SmartSolarMicrogrid.API.Components.Microgrid.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllStations([FromQuery] string? status)
+        public async Task<IActionResult> GetAllStations([FromQuery] string? status, [FromQuery] string? gridOperator)
         {
             bool activeOnly = status?.Equals("active", StringComparison.OrdinalIgnoreCase) ?? false;
             var stations = await _microgridService.GetAllStationsAsync(activeOnly);
+            
+            if (!string.IsNullOrWhiteSpace(gridOperator))
+            {
+                stations = stations.Where(s => 
+                    s.GridOperatorName.Equals(gridOperator, StringComparison.OrdinalIgnoreCase) ||
+                    s.StationId.Equals(gridOperator, StringComparison.OrdinalIgnoreCase));
+            }
+
             return Ok(stations);
         }
 

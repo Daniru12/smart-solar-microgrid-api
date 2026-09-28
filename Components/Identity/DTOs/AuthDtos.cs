@@ -14,5 +14,6 @@ namespace SmartSolarMicrogrid.API.Components.Identity.DTOs
         public string? Email { get; set; }
         public string? Nic { get; set; }
         public string? Name { get; set; }
+        public string? StationId { get; set; }
     }
 }

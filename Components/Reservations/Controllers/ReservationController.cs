@@ -1,4 +1,4 @@
-﻿/*
+/*
  * File: ReservationController.cs
  * Author: Upasama (Member 3 - Reservation & Booking Management)
  * Description: ASP.NET Core Web API Controller for all reservation endpoints.
@@ -35,6 +35,15 @@ namespace SmartSolarMicrogrid.API.Components.Reservations.Controllers
             _service = service;
         }
 
+        private string? GetOperatorStationId()
+        {
+            if (User.IsInRole("GridOperator"))
+            {
+                return User.FindFirst("StationId")?.Value;
+            }
+            return null; // Backoffice role or Prosumer gets null (not filtered by operator station)
+        }
+
         // ============================================================
         // GET ENDPOINTS - Query / Read
         // ============================================================
@@ -48,7 +57,7 @@ namespace SmartSolarMicrogrid.API.Components.Reservations.Controllers
         [Authorize(Roles = "Backoffice,GridOperator")]
         public async Task<IActionResult> GetAll()
         {
-            var result = await _service.GetAllAsync();
+            var result = await _service.GetAllAsync(GetOperatorStationId());
             return Ok(new { Success = true, Data = result });
         }
 
@@ -81,7 +90,7 @@ namespace SmartSolarMicrogrid.API.Components.Reservations.Controllers
         [Authorize(Roles = "Backoffice,GridOperator")]
         public async Task<IActionResult> GetPending()
         {
-            var result = await _service.GetPendingAsync();
+            var result = await _service.GetPendingAsync(GetOperatorStationId());
             return Ok(new { Success = true, Data = result });
         }
 
@@ -122,7 +131,7 @@ namespace SmartSolarMicrogrid.API.Components.Reservations.Controllers
                 From = from,
                 To = to
             };
-            var result = await _service.SearchAsync(searchDto);
+            var result = await _service.SearchAsync(searchDto, GetOperatorStationId());
             return Ok(new { Success = true, Data = result });
         }
 
@@ -146,7 +155,7 @@ namespace SmartSolarMicrogrid.API.Components.Reservations.Controllers
                 From = from,
                 To = to
             };
-            var result = await _service.SearchAsync(searchDto);
+            var result = await _service.SearchAsync(searchDto); // Prosumers don't filter by operator station
             return Ok(new { Success = true, Data = result });
         }
 
@@ -159,7 +168,7 @@ namespace SmartSolarMicrogrid.API.Components.Reservations.Controllers
         [Authorize(Roles = "Backoffice,GridOperator")]
         public async Task<IActionResult> GetDashboardSummary()
         {
-            var result = await _service.GetDashboardSummaryAsync();
+            var result = await _service.GetDashboardSummaryAsync(GetOperatorStationId());
             return Ok(new { Success = true, Data = result });
         }
 
@@ -232,8 +241,56 @@ namespace SmartSolarMicrogrid.API.Components.Reservations.Controllers
         {
             try
             {
-                var result = await _service.ApproveReservationAsync(id);
+                var result = await _service.ApproveReservationAsync(id, GetOperatorStationId());
                 return Ok(new { Success = true, Data = result, Message = "Reservation approved successfully." });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { Success = false, Message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { Success = false, Message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// GET /api/reservations/{id}/validate-qr
+        /// Validates a reservation QR code for energy transfer.
+        /// GridOperator only.
+        /// </summary>
+        [HttpGet("{id}/validate-qr")]
+        [Authorize(Roles = "GridOperator,Backoffice")]
+        public async Task<IActionResult> ValidateQr(string id)
+        {
+            try
+            {
+                var result = await _service.ValidateQrAsync(id, GetOperatorStationId());
+                return Ok(new { Success = true, Data = result, Message = "QR is valid and reservation is approved." });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { Success = false, Message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { Success = false, Message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// PUT /api/reservations/{id}/complete
+        /// Completes an Approved reservation after QR scan and energy transfer.
+        /// GridOperator only.
+        /// </summary>
+        [HttpPut("{id}/complete")]
+        [Authorize(Roles = "GridOperator,Backoffice")]
+        public async Task<IActionResult> Complete(string id)
+        {
+            try
+            {
+                var result = await _service.CompleteReservationAsync(id, GetOperatorStationId());
+                return Ok(new { Success = true, Data = result, Message = "Energy transfer confirmed and reservation completed." });
             }
             catch (KeyNotFoundException ex)
             {
@@ -257,7 +314,8 @@ namespace SmartSolarMicrogrid.API.Components.Reservations.Controllers
         {
             try
             {
-                var result = await _service.CancelReservationAsync(id);
+                string? operatorStationId = User.IsInRole("GridOperator") ? GetOperatorStationId() : null;
+                var result = await _service.CancelReservationAsync(id, operatorStationId);
                 return Ok(new { Success = true, Data = result, Message = "Reservation cancelled successfully." });
             }
             catch (KeyNotFoundException ex)

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * File: ReservationRepository.cs
  * Author: Upasama (Member 3 - Reservation & Booking Management)
  * Description: MongoDB repository implementation for the EnergyReservation collection.
@@ -48,7 +48,8 @@ namespace SmartSolarMicrogrid.API.Components.Reservations.Repositories
         /// <summary>Returns a single reservation by MongoDB ObjectId string.</summary>
         public async Task<EnergyReservation?> GetByIdAsync(string id)
         {
-            return await _collection.Find(r => r.Id == id).FirstOrDefaultAsync();
+            if (!ObjectId.TryParse(id, out var objectId)) return null;
+            return await _collection.Find(Builders<EnergyReservation>.Filter.Eq("_id", objectId)).FirstOrDefaultAsync();
         }
 
         /// <summary>Returns all reservations for a specific Prosumer NIC (booking history).</summary>
@@ -152,18 +153,20 @@ namespace SmartSolarMicrogrid.API.Components.Reservations.Repositories
         }
 
         /// <summary>Returns count of Approved reservations with a future date (for dashboard).</summary>
-        public async Task<long> CountApprovedFutureAsync()
+        public async Task<long> CountApprovedFutureAsync(string? stationId = null)
         {
             return await _collection.CountDocumentsAsync(r =>
                 r.Status == ReservationStatus.Approved &&
-                r.ReservationDate >= DateTime.UtcNow);
+                r.ReservationDate >= DateTime.UtcNow &&
+                (stationId == null || r.StationId == stationId));
         }
 
         /// <summary>Returns count of all Pending reservations (for dashboard).</summary>
-        public async Task<long> CountPendingAsync()
+        public async Task<long> CountPendingAsync(string? stationId = null)
         {
             return await _collection.CountDocumentsAsync(r =>
-                r.Status == ReservationStatus.Pending);
+                r.Status == ReservationStatus.Pending &&
+                (stationId == null || r.StationId == stationId));
         }
 
         // ============================================================
@@ -180,13 +183,19 @@ namespace SmartSolarMicrogrid.API.Components.Reservations.Repositories
         /// <summary>Replaces an entire reservation document by its MongoDB _id.</summary>
         public async Task UpdateAsync(string id, EnergyReservation reservation)
         {
-            await _collection.ReplaceOneAsync(r => r.Id == id, reservation);
+            if (ObjectId.TryParse(id, out var objectId))
+            {
+                await _collection.ReplaceOneAsync(Builders<EnergyReservation>.Filter.Eq("_id", objectId), reservation);
+            }
         }
 
         /// <summary>Hard deletes a reservation document by its MongoDB _id.</summary>
         public async Task DeleteAsync(string id)
         {
-            await _collection.DeleteOneAsync(r => r.Id == id);
+            if (ObjectId.TryParse(id, out var objectId))
+            {
+                await _collection.DeleteOneAsync(Builders<EnergyReservation>.Filter.Eq("_id", objectId));
+            }
         }
     }
 }

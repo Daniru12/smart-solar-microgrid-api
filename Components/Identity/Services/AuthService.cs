@@ -38,14 +38,21 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
 
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(_configuration["JwtSettings:SecretKey"] ?? "");
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.Id ?? string.Empty),
+                new Claim(ClaimTypes.Email, user.Email ?? string.Empty),
+                new Claim(ClaimTypes.Role, user.Role.ToString())
+            };
+
+            if (!string.IsNullOrEmpty(user.StationId))
+            {
+                claims.Add(new Claim("StationId", user.StationId));
+            }
+
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Subject = new ClaimsIdentity(new[]
-                {
-                    new Claim(ClaimTypes.NameIdentifier, user.Id ?? string.Empty),
-                    new Claim(ClaimTypes.Email, user.Email ?? string.Empty),
-                    new Claim(ClaimTypes.Role, user.Role.ToString())
-                }),
+                Subject = new ClaimsIdentity(claims),
                 Expires = DateTime.UtcNow.AddHours(2),
                 Issuer = _configuration["JwtSettings:Issuer"],
                 Audience = _configuration["JwtSettings:Audience"],
@@ -78,7 +85,8 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
                 Role = user.Role.ToString(),
                 Email = user.Email,
                 Nic = nic,
-                Name = name
+                Name = name,
+                StationId = user.StationId
             };
         }
     }
