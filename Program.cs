@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Options;
 using SmartSolarMicrogrid.API.Infrastructure.MongoDB;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -54,6 +54,10 @@ builder.Services.AddScoped<SmartSolarMicrogrid.API.Components.Identity.Interface
 builder.Services.AddScoped<SmartSolarMicrogrid.API.Components.Microgrid.Interfaces.IMicrogridStationRepository, SmartSolarMicrogrid.API.Components.Microgrid.Repositories.MicrogridStationRepository>();
 builder.Services.AddScoped<SmartSolarMicrogrid.API.Components.Microgrid.Interfaces.IEnergySlotRepository, SmartSolarMicrogrid.API.Components.Microgrid.Repositories.EnergySlotRepository>();
 builder.Services.AddScoped<SmartSolarMicrogrid.API.Components.Microgrid.Interfaces.IMicrogridService, SmartSolarMicrogrid.API.Components.Microgrid.Services.MicrogridService>();
+
+// Add Reservations Component DI
+builder.Services.AddScoped<SmartSolarMicrogrid.API.Components.Reservations.Interfaces.IReservationRepository, SmartSolarMicrogrid.API.Components.Reservations.Repositories.ReservationRepository>();
+builder.Services.AddScoped<SmartSolarMicrogrid.API.Components.Reservations.Interfaces.IReservationService, SmartSolarMicrogrid.API.Components.Reservations.Services.ReservationService>();
 
 // QR issue, scan verification, and energy-transfer status.
 builder.Services.AddScoped<SmartSolarMicrogrid.API.Components.Transaction.Interfaces.IEnergyTransferRepository, SmartSolarMicrogrid.API.Components.Transaction.Repositories.EnergyTransferRepository>();
