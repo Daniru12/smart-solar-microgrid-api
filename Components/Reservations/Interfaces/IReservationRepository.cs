@@ -1,4 +1,4 @@
-﻿/*
+/*
  * File: IReservationRepository.cs
  * Author: Upasama (Member 3 - Reservation & Booking Management)
  * Description: Repository interface defining all data access operations
@@ -60,10 +60,10 @@ namespace SmartSolarMicrogrid.API.Components.Reservations.Interfaces
         Task<bool> HasConflictingReservationForSlotAsync(string slotId, DateTime reservationDate);
 
         /// <summary>Returns count of Approved future reservations (for dashboard).</summary>
-        Task<long> CountApprovedFutureAsync();
+        Task<long> CountApprovedFutureAsync(string? stationId = null);
 
         /// <summary>Returns count of Pending reservations (for dashboard).</summary>
-        Task<long> CountPendingAsync();
+        Task<long> CountPendingAsync(string? stationId = null);
 
         // --- Write Operations ---
 

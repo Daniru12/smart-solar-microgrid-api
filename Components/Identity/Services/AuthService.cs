@@ -13,11 +13,13 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
     public class AuthService : IAuthService
     {
         private readonly IUserRepository _userRepository;
+        private readonly IProsumerRepository _prosumerRepository;
         private readonly IConfiguration _configuration;
 
-        public AuthService(IUserRepository userRepository, IConfiguration configuration)
+        public AuthService(IUserRepository userRepository, IProsumerRepository prosumerRepository, IConfiguration configuration)
         {
             _userRepository = userRepository;
+            _prosumerRepository = prosumerRepository;
             _configuration = configuration;
         }
 
@@ -36,14 +38,21 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
 
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(_configuration["JwtSettings:SecretKey"] ?? "");
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.Id ?? string.Empty),
+                new Claim(ClaimTypes.Email, user.Email ?? string.Empty),
+                new Claim(ClaimTypes.Role, user.Role.ToString())
+            };
+
+            if (!string.IsNullOrEmpty(user.StationId))
+            {
+                claims.Add(new Claim("StationId", user.StationId));
+            }
+
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Subject = new ClaimsIdentity(new[]
-                {
-                    new Claim(ClaimTypes.NameIdentifier, user.Id ?? string.Empty),
-                    new Claim(ClaimTypes.Email, user.Email ?? string.Empty),
-                    new Claim(ClaimTypes.Role, user.Role.ToString())
-                }),
+                Subject = new ClaimsIdentity(claims),
                 Expires = DateTime.UtcNow.AddHours(2),
                 Issuer = _configuration["JwtSettings:Issuer"],
                 Audience = _configuration["JwtSettings:Audience"],
@@ -52,11 +61,32 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
             
             var token = tokenHandler.CreateToken(tokenDescriptor);
 
+            string? nic = null;
+            string? name = null;
+
+            if (user.Role == Models.Role.Prosumer)
+            {
+                var prosumer = await _prosumerRepository.GetByUserIdAsync(user.Id ?? "");
+                if (prosumer != null)
+                {
+                    nic = prosumer.NIC;
+                    name = $"{prosumer.FirstName} {prosumer.LastName}".Trim();
+                }
+            }
+            else if (user.Role == Models.Role.GridOperator)
+            {
+                name = "Grid Operator";
+            }
+
             return new LoginResponse
             {
                 Token = tokenHandler.WriteToken(token),
                 UserId = user.Id ?? string.Empty,
-                Role = user.Role.ToString()
+                Role = user.Role.ToString(),
+                Email = user.Email,
+                Nic = nic,
+                Name = name,
+                StationId = user.StationId
             };
         }
     }

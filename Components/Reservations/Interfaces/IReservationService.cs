@@ -1,4 +1,4 @@
-﻿/*
+/*
  * File: IReservationService.cs
  * Author: Upasama (Member 3 - Reservation & Booking Management)
  * Description: Service interface defining all business-logic operations
@@ -40,7 +40,7 @@ namespace SmartSolarMicrogrid.API.Components.Reservations.Interfaces
         ///   - At least 12 hours must remain before the reservation date.
         ///   - Only Pending or Approved reservations can be cancelled.
         /// </summary>
-        Task<ReservationResponseDto> CancelReservationAsync(string id);
+        Task<ReservationResponseDto> CancelReservationAsync(string id, string? operatorStationId = null);
 
         // --- Backoffice / GridOperator Actions ---
 
@@ -48,12 +48,18 @@ namespace SmartSolarMicrogrid.API.Components.Reservations.Interfaces
         /// Approves a Pending reservation. Sets status to Approved.
         /// Only accessible by Backoffice or GridOperator roles.
         /// </summary>
-        Task<ReservationResponseDto> ApproveReservationAsync(string id);
+        Task<ReservationResponseDto> ApproveReservationAsync(string id, string? operatorStationId = null);
+
+        /// <summary>
+        /// Validates a scanned QR code (Reservation ID).
+        /// Checks if it exists, is Approved, and not Cancelled/Completed.
+        /// </summary>
+        Task<ReservationResponseDto> ValidateQrAsync(string id, string? operatorStationId = null);
 
         /// <summary>
         /// Completes an Approved reservation (e.g. after QR scan). Sets status to Completed.
         /// </summary>
-        Task<ReservationResponseDto> CompleteReservationAsync(string id);
+        Task<ReservationResponseDto> CompleteReservationAsync(string id, string? operatorStationId = null);
 
         /// <summary>
         /// Hard deletes a reservation from the database.
@@ -67,22 +73,22 @@ namespace SmartSolarMicrogrid.API.Components.Reservations.Interfaces
         Task<ReservationResponseDto> GetByIdAsync(string id);
 
         /// <summary>Returns all reservations (admin view).</summary>
-        Task<List<ReservationResponseDto>> GetAllAsync();
+        Task<List<ReservationResponseDto>> GetAllAsync(string? operatorStationId = null);
 
         /// <summary>Returns all reservations for a specific Prosumer NIC (booking history).</summary>
         Task<List<ReservationResponseDto>> GetByProsumerNicAsync(string nic);
 
         /// <summary>Returns all reservations with Pending status.</summary>
-        Task<List<ReservationResponseDto>> GetPendingAsync();
+        Task<List<ReservationResponseDto>> GetPendingAsync(string? operatorStationId = null);
 
         /// <summary>
         /// Searches reservations with optional filters.
         /// All parameters are optional - null means "no filter applied".
         /// </summary>
-        Task<List<ReservationResponseDto>> SearchAsync(ReservationSearchDto searchDto);
+        Task<List<ReservationResponseDto>> SearchAsync(ReservationSearchDto searchDto, string? operatorStationId = null);
 
         /// <summary>Returns dashboard summary counts.</summary>
-        Task<DashboardSummaryDto> GetDashboardSummaryAsync();
+        Task<DashboardSummaryDto> GetDashboardSummaryAsync(string? operatorStationId = null);
 
         // --- Cross-component integration (for Member 2 IReservationChecker) ---
 
