@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Options;
 using SmartSolarMicrogrid.API.Infrastructure.MongoDB;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -66,7 +66,7 @@ builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
-// Test MongoDB Connection on Startup
+
 try
 {
     var settings = app.Services.GetRequiredService<MongoDbSettings>();
@@ -109,3 +109,4 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+

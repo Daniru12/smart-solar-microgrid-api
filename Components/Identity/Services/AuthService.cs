@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using SmartSolarMicrogrid.API.Components.Identity.DTOs;
 using SmartSolarMicrogrid.API.Components.Identity.Interfaces;
@@ -40,8 +40,8 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
             {
                 Subject = new ClaimsIdentity(new[]
                 {
-                    new Claim(ClaimTypes.NameIdentifier, user.Id),
-                    new Claim(ClaimTypes.Email, user.Email),
+                    new Claim(ClaimTypes.NameIdentifier, user.Id ?? string.Empty),
+                    new Claim(ClaimTypes.Email, user.Email ?? string.Empty),
                     new Claim(ClaimTypes.Role, user.Role.ToString())
                 }),
                 Expires = DateTime.UtcNow.AddHours(2),
@@ -55,7 +55,7 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
             return new LoginResponse
             {
                 Token = tokenHandler.WriteToken(token),
-                UserId = user.Id,
+                UserId = user.Id ?? string.Empty,
                 Role = user.Role.ToString()
             };
         }
