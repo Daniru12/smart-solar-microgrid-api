@@ -1,8 +1,4 @@
-/*
- * File: IEnergyTransferService.cs
- * Description: Business rules for issuing a verified QR, scanning it inside the
- *              booked time window, and completing the energy transfer.
- */
+
 
 using SmartSolarMicrogrid.API.Components.Transaction.DTOs;
 

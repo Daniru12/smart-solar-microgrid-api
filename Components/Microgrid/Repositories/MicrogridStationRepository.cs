@@ -47,7 +47,7 @@ namespace SmartSolarMicrogrid.API.Components.Microgrid.Repositories
             var update = Builders<SolarStationInfo>.Update
                 .Set(s => s.Status, status)
                 .Set(s => s.UpdatedAt, DateTime.UtcNow);
-            
+
             var result = await _stations.UpdateOneAsync(s => s.StationId == stationId, update);
             return result.IsAcknowledged && result.ModifiedCount > 0;
         }

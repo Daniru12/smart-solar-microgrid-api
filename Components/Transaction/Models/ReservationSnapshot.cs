@@ -1,10 +1,4 @@
-/*
- * File: ReservationSnapshot.cs
- * Description: Read model for the EnergyReservations collection created by the
- *              booking component. Extra fields are ignored so this component can
- *              read an approved booking before that branch is merged, and can
- *              keep working after it is merged, without replacing the document.
- */
+
 
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;

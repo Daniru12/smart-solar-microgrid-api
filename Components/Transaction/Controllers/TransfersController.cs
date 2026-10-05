@@ -1,9 +1,4 @@
-/*
- * File: TransfersController.cs
- * Description: Routes for issuing a booking QR, showing the prosumer confirmation,
- *              verifying an operator scan, and completing the energy transfer.
- *              Business rules stay in EnergyTransferService.
- */
+
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
