@@ -1,4 +1,4 @@
-﻿using SmartSolarMicrogrid.API.Components.Identity.DTOs;
+using SmartSolarMicrogrid.API.Components.Identity.DTOs;
 using SmartSolarMicrogrid.API.Components.Identity.Interfaces;
 using SmartSolarMicrogrid.API.Components.Identity.Models;
 using System;

@@ -1,4 +1,4 @@
-﻿using SmartSolarMicrogrid.API.Components.Identity.DTOs;
+using SmartSolarMicrogrid.API.Components.Identity.DTOs;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
