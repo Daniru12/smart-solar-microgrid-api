@@ -42,6 +42,15 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Controllers
             return Ok(new { Success = true, Data = users });
         }
 
+        [HttpGet("grid-operators")]
+        [Authorize(Roles = "Backoffice,GridOperator")]
+        public async Task<IActionResult> GetGridOperators()
+        {
+            var users = await _userService.GetAllUsersAsync();
+            var operators = users.Where(u => u.Role == "GridOperator").ToList();
+            return Ok(new { Success = true, Data = operators });
+        }
+
         [HttpGet("{id}")]
         [Authorize(Roles = "Backoffice")]
         public async Task<IActionResult> GetUserById(string id)
