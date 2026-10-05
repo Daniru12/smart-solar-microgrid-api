@@ -55,10 +55,14 @@ builder.Services.AddScoped<SmartSolarMicrogrid.API.Components.Microgrid.Interfac
 builder.Services.AddScoped<SmartSolarMicrogrid.API.Components.Microgrid.Interfaces.IEnergySlotRepository, SmartSolarMicrogrid.API.Components.Microgrid.Repositories.EnergySlotRepository>();
 builder.Services.AddScoped<SmartSolarMicrogrid.API.Components.Microgrid.Interfaces.IMicrogridService, SmartSolarMicrogrid.API.Components.Microgrid.Services.MicrogridService>();
 
+// Booking component: create, approve, and cancel reservations.
+builder.Services.AddScoped<SmartSolarMicrogrid.API.Components.Reservations.Interfaces.IReservationRepository, SmartSolarMicrogrid.API.Components.Reservations.Repositories.ReservationRepository>();
+builder.Services.AddScoped<SmartSolarMicrogrid.API.Components.Reservations.Interfaces.IReservationService, SmartSolarMicrogrid.API.Components.Reservations.Services.ReservationService>();
+builder.Services.AddScoped<SmartSolarMicrogrid.API.Components.Microgrid.Interfaces.IReservationChecker, SmartSolarMicrogrid.API.Components.Reservations.Services.ReservationService>();
+
 // QR issue, scan verification, and energy-transfer status.
 builder.Services.AddScoped<SmartSolarMicrogrid.API.Components.Transaction.Interfaces.IEnergyTransferRepository, SmartSolarMicrogrid.API.Components.Transaction.Repositories.EnergyTransferRepository>();
 builder.Services.AddScoped<SmartSolarMicrogrid.API.Components.Transaction.Interfaces.IReservationLookup, SmartSolarMicrogrid.API.Components.Transaction.Repositories.ReservationLookup>();
-builder.Services.AddScoped<SmartSolarMicrogrid.API.Components.Microgrid.Interfaces.IReservationChecker, SmartSolarMicrogrid.API.Components.Transaction.Repositories.ReservationLookup>();
 builder.Services.AddScoped<SmartSolarMicrogrid.API.Components.Transaction.Interfaces.IEnergyTransferService, SmartSolarMicrogrid.API.Components.Transaction.Services.EnergyTransferService>();
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
