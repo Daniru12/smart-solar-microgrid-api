@@ -108,8 +108,6 @@ namespace SmartSolarMicrogrid.API.Components.Transaction.Services
                 return Map(transfer, "This booking is already verified. Energy transfer is in progress.");
             }
 
-            EnsureInsideSlotWindow(transfer);
-
             var now = DateTime.UtcNow;
             transfer.TransferStatus = TransferStatusNames.InTransfer;
             transfer.VerifiedAt = now;
@@ -117,7 +115,7 @@ namespace SmartSolarMicrogrid.API.Components.Transaction.Services
             transfer.UpdatedAt = now;
             await _transfers.UpdateAsync(transfer);
 
-            return Map(transfer, "QR verified. Energy transfer has started.");
+            return Map(transfer, "Booking confirmed and verified.");
         }
 
         public async Task<TransferResponse> CompleteTransferAsync(string reservationId)
@@ -166,28 +164,6 @@ namespace SmartSolarMicrogrid.API.Components.Transaction.Services
             }
 
             return reservation;
-        }
-
-        private static void EnsureInsideSlotWindow(EnergyTransfer transfer)
-        {
-            if (!TimeSpan.TryParse(transfer.StartTime, out var start) || !TimeSpan.TryParse(transfer.EndTime, out var end))
-            {
-                throw new InvalidOperationException("This booking does not have a valid slot time.");
-            }
-
-            var day = transfer.ReservationDate.Date;
-            var windowStart = DateTime.SpecifyKind(day.Add(start), DateTimeKind.Utc);
-            var windowEnd = DateTime.SpecifyKind(day.Add(end), DateTimeKind.Utc);
-            if (windowEnd <= windowStart)
-            {
-                windowEnd = windowEnd.AddDays(1);
-            }
-
-            var now = DateTime.UtcNow;
-            if (now < windowStart || now > windowEnd)
-            {
-                throw new InvalidOperationException("QR can be scanned only during the booked date and time.");
-            }
         }
 
         private static string ConfirmationMessage(string status)
