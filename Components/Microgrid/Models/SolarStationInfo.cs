@@ -3,6 +3,7 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace SmartSolarMicrogrid.API.Components.Microgrid.Models
 {
+    [BsonIgnoreExtraElements]
     public class SolarStationInfo
     {
         [BsonId]
