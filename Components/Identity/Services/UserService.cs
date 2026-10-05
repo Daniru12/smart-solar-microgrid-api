@@ -34,8 +34,8 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
 
             return new UserDto
             {
-                Id = user.Id,
-                Email = user.Email,
+                Id = user.Id ?? string.Empty,
+                Email = user.Email ?? string.Empty,
                 Role = user.Role.ToString(),
                 Status = user.Status.ToString(),
                 CreatedAt = user.CreatedAt
@@ -47,8 +47,8 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
             var users = await _userRepository.GetAllAsync();
             return users.Select(u => new UserDto
             {
-                Id = u.Id,
-                Email = u.Email,
+                Id = u.Id ?? string.Empty,
+                Email = u.Email ?? string.Empty,
                 Role = u.Role.ToString(),
                 Status = u.Status.ToString(),
                 CreatedAt = u.CreatedAt
@@ -80,8 +80,8 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
 
             return new UserProfileResponse
             {
-                Id = user.Id,
-                Email = user.Email,
+                Id = user.Id ?? string.Empty,
+                Email = user.Email ?? string.Empty,
                 Role = user.Role.ToString(),
                 Status = user.Status.ToString(),
                 CreatedAt = user.CreatedAt
@@ -133,8 +133,8 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
 
             return new UserProfileResponse
             {
-                Id = user.Id,
-                Email = user.Email,
+                Id = user.Id ?? string.Empty,
+                Email = user.Email ?? string.Empty,
                 Role = user.Role.ToString(),
                 Status = user.Status.ToString(),
                 CreatedAt = user.CreatedAt
@@ -148,8 +148,8 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
 
             return new UserProfileResponse
             {
-                Id = user.Id,
-                Email = user.Email,
+                Id = user.Id ?? string.Empty,
+                Email = user.Email ?? string.Empty,
                 Role = user.Role.ToString(),
                 Status = user.Status.ToString(),
                 CreatedAt = user.CreatedAt
@@ -165,7 +165,7 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
                 throw new UnauthorizedAccessException("Current password is incorrect.");
 
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
-            await _userRepository.UpdateAsync(user.Id, user);
+            await _userRepository.UpdateAsync(user.Id ?? string.Empty, user);
         }
 
         public async Task ResetPasswordAsync(string id, ResetPasswordRequest request)

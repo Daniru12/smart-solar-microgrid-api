@@ -77,7 +77,7 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
                     throw new ArgumentException($"Invalid status value: {request.Status}");
                 }
 
-                await _userRepository.UpdateAsync(user.Id, user);
+                await _userRepository.UpdateAsync(user.Id ?? string.Empty, user);
             }
         }
 

@@ -8,6 +8,9 @@ namespace SmartSolarMicrogrid.API.Components.Microgrid.DTOs
         public string Name { get; set; } = string.Empty;
         
         [Required]
+        public string GridOperatorName { get; set; } = string.Empty;
+        
+        [Required]
         public string Address { get; set; } = string.Empty;
         
         [Required]
@@ -38,6 +41,7 @@ namespace SmartSolarMicrogrid.API.Components.Microgrid.DTOs
     public class UpdateStationDto
     {
         public string Name { get; set; } = string.Empty;
+        public string GridOperatorName { get; set; } = string.Empty;
         public string Address { get; set; } = string.Empty;
         public double Latitude { get; set; }
         public double Longitude { get; set; }
@@ -52,6 +56,7 @@ namespace SmartSolarMicrogrid.API.Components.Microgrid.DTOs
     {
         public string StationId { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
+        public string GridOperatorName { get; set; } = string.Empty;
         public string Address { get; set; } = string.Empty;
         public double Latitude { get; set; }
         public double Longitude { get; set; }

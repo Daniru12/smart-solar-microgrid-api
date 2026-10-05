@@ -22,5 +22,8 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Models
         public AccountStatus Status { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        [BsonIgnoreIfNull]
+        public string? StationId { get; set; }
     }
 }

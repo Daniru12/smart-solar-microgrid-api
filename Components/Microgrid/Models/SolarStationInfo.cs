@@ -14,6 +14,8 @@ namespace SmartSolarMicrogrid.API.Components.Microgrid.Models
         
         public string Name { get; set; } = string.Empty;
         
+        public string GridOperatorName { get; set; } = string.Empty;
+        
         public string Address { get; set; } = string.Empty;
         
         public double Latitude { get; set; }
