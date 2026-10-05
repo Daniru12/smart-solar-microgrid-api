@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Options;
 using SmartSolarMicrogrid.API.Infrastructure.MongoDB;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,8 +10,8 @@ builder.Services.AddControllers();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp",
-        builder => builder
-            .WithOrigins("http://localhost:5173", "http://127.0.0.1:5173")
+        policy => policy
+            .SetIsOriginAllowed(_ => true)
             .AllowAnyMethod()
             .AllowAnyHeader()
             .AllowCredentials());
@@ -93,10 +93,7 @@ catch (Exception ex)
 }
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-}
+app.MapOpenApi();
 
 app.UseCors("AllowReactApp");
 
