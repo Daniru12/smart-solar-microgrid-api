@@ -6,13 +6,13 @@ namespace SmartSolarMicrogrid.API.Components.Microgrid.DTOs
     {
         [Required]
         public DateTime Date { get; set; }
-        
+
         [Required]
         public string StartTime { get; set; } = string.Empty;
-        
+
         [Required]
         public string EndTime { get; set; } = string.Empty;
-        
+
         [Required]
         [Range(0.1, double.MaxValue)]
         public double Capacity { get; set; }

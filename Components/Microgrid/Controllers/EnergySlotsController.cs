@@ -23,9 +23,9 @@ namespace SmartSolarMicrogrid.API.Components.Microgrid.Controllers
             {
                 parsedDate = d;
             }
-            
+
             bool availableOnly = status?.Equals("available", StringComparison.OrdinalIgnoreCase) ?? false;
-            
+
             var slots = await _microgridService.GetSlotsByStationAsync(stationId, parsedDate, availableOnly);
             return Ok(slots);
         }
@@ -35,7 +35,7 @@ namespace SmartSolarMicrogrid.API.Components.Microgrid.Controllers
         {
             var slot = await _microgridService.GetSlotByIdAsync(id);
             if (slot == null) return NotFound("Slot not found.");
-            
+
             return Ok(slot);
         }
 
@@ -43,7 +43,7 @@ namespace SmartSolarMicrogrid.API.Components.Microgrid.Controllers
         public async Task<IActionResult> CreateSlot(string stationId, [FromBody] CreateSlotDto dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
-            
+
             try
             {
                 var created = await _microgridService.CreateSlotAsync(stationId, dto);
@@ -64,7 +64,7 @@ namespace SmartSolarMicrogrid.API.Components.Microgrid.Controllers
         {
             var success = await _microgridService.UpdateSlotAsync(id, dto);
             if (!success) return NotFound("Slot not found.");
-            
+
             return NoContent();
         }
 
@@ -72,10 +72,10 @@ namespace SmartSolarMicrogrid.API.Components.Microgrid.Controllers
         public async Task<IActionResult> UpdateSlotStatus(string id, [FromBody] string status)
         {
             if (string.IsNullOrEmpty(status)) return BadRequest("Status is required.");
-            
+
             var success = await _microgridService.UpdateSlotAsync(id, new UpdateSlotDto { Status = status });
             if (!success) return NotFound("Slot not found.");
-            
+
             return NoContent();
         }
     }

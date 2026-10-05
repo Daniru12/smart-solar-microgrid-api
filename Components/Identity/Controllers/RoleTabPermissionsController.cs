@@ -20,12 +20,6 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Controllers
             _roleTabPermissionsService = roleTabPermissionsService;
         }
 
-        // ── Role Tab Permissions ──────────────────────────────────────────────────────
-
-        /// <summary>
-        /// Gets the sidebar tab permissions for a specific role.
-        /// Only Backoffice users can call this.
-        /// </summary>
         [HttpGet("{role}/tabs")]
         [Authorize]
         public async Task<IActionResult> GetTabPermissionsByRole(string role)
@@ -54,11 +48,6 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Controllers
             }
         }
 
-        /// <summary>
-        /// Updates the sidebar tab permissions for a specific role.
-        /// Pass null visibleTabs to restore default (all tabs visible).
-        /// Only Backoffice users can call this.
-        /// </summary>
         [HttpPut("{role}/tabs")]
         [Authorize(Roles = "Backoffice")]
         public async Task<IActionResult> UpdateTabPermissionsByRole(string role, [FromBody] UpdateRoleTabPermissionsRequest request)
@@ -76,7 +65,6 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Controllers
 
                 Console.WriteLine($"Successfully parsed role to: {roleEnum}");
 
-                // Prevent configuration of Backoffice role - they always see everything
                 if (roleEnum == Role.Backoffice)
                 {
                     return BadRequest(new { Success = false, Message = "Backoffice role cannot be configured. Backoffice users always see all tabs." });
@@ -92,10 +80,6 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Controllers
             }
         }
 
-        /// <summary>
-        /// Gets tab permissions for all roles.
-        /// Only Backoffice users can call this.
-        /// </summary>
         [HttpGet("tabs")]
         [Authorize(Roles = "Backoffice")]
         public async Task<IActionResult> GetAllRolePermissions()

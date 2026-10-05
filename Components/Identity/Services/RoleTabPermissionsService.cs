@@ -23,7 +23,7 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
 
             if (permissions == null)
             {
-                // No configuration exists for this role - return null for VisibleTabs (show all)
+
                 return new RoleTabPermissionsResponse
                 {
                     Role = role.ToString(),
@@ -44,7 +44,6 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
         {
             var allPermissions = await _repository.GetAllAsync();
 
-            // Get all available roles
             var allRoles = Enum.GetValues<Role>().ToList();
 
             var responses = new List<RoleTabPermissionsResponse>();
@@ -63,7 +62,7 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
                 }
                 else
                 {
-                    // No configuration for this role
+
                     responses.Add(new RoleTabPermissionsResponse
                     {
                         Role = role.ToString(),
@@ -80,7 +79,7 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
         {
             if (request.VisibleTabs == null)
             {
-                // Remove configuration to restore default (show all tabs)
+
                 await _repository.DeleteAsync(role);
                 return new RoleTabPermissionsResponse
                 {

@@ -32,7 +32,7 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
                 Email = request.Email,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
                 Role = Role.Prosumer,
-                Status = AccountStatus.Active // Changed to Active for testing
+                Status = AccountStatus.Active
             };
             await _userRepository.CreateAsync(user);
 
@@ -67,7 +67,7 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
             var user = await _userRepository.GetByIdAsync(prosumer.UserId);
             if (user != null)
             {
-                // Parse string status to AccountStatus enum
+
                 if (Enum.TryParse<AccountStatus>(request.Status, out var status))
                 {
                     user.Status = status;
@@ -170,14 +170,13 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
 
             foreach (var user in prosumerUsers)
             {
-                // Filter by status if specified
+
                 if (request.Status.HasValue && user.Status != request.Status.Value)
                     continue;
 
                 var prosumer = await _prosumerRepository.GetByUserIdAsync(user.Id);
                 if (prosumer == null) continue;
 
-                // Filter by search term if specified
                 if (!string.IsNullOrEmpty(request.SearchTerm))
                 {
                     var searchTerm = request.SearchTerm.ToLower();
@@ -185,7 +184,7 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
                                 prosumer.FirstName.ToLower().Contains(searchTerm) ||
                                 prosumer.LastName.ToLower().Contains(searchTerm) ||
                                 user.Email.ToLower().Contains(searchTerm);
-                    
+
                     if (!match) continue;
                 }
 
@@ -204,7 +203,6 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
                 });
             }
 
-            // Apply pagination
             var skip = (request.Page - 1) * request.PageSize;
             return result.Skip(skip).Take(request.PageSize).ToList();
         }

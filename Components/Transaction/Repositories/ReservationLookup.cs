@@ -1,9 +1,4 @@
-/*
- * File: ReservationLookup.cs
- * Description: Reads EnergyReservations and marks one Approved booking Completed
- *              after a verified transfer. Implements IReservationChecker so station
- *              deactivation can see active bookings.
- */
+
 
 using MongoDB.Driver;
 using SmartSolarMicrogrid.API.Components.Identity.Models;
