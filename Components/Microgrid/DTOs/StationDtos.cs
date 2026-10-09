@@ -6,34 +6,34 @@ namespace SmartSolarMicrogrid.API.Components.Microgrid.DTOs
     {
         [Required]
         public string Name { get; set; } = string.Empty;
-        
+
         [Required]
         public string GridOperatorName { get; set; } = string.Empty;
-        
+
         [Required]
         public string Address { get; set; } = string.Empty;
-        
+
         [Required]
         public double Latitude { get; set; }
-        
+
         [Required]
         public double Longitude { get; set; }
-        
+
         [Required]
         [Range(0, double.MaxValue)]
         public double Capacity { get; set; }
-        
+
         [Required]
         [Range(0, double.MaxValue)]
         public double BatteryCapacity { get; set; }
-        
+
         [Required]
         [Range(0, int.MaxValue)]
         public int AvailableStorage { get; set; }
-        
+
         [Required]
         public string OpeningTime { get; set; } = string.Empty;
-        
+
         [Required]
         public string ClosingTime { get; set; } = string.Empty;
     }

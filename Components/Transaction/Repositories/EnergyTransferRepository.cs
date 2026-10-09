@@ -1,7 +1,4 @@
-/*
- * File: EnergyTransferRepository.cs
- * Description: MongoDB access for EnergyTransfers. One document per reservation.
- */
+
 
 using MongoDB.Driver;
 using SmartSolarMicrogrid.API.Components.Transaction.Interfaces;

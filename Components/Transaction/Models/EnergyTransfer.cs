@@ -1,11 +1,4 @@
-/*
- * File: EnergyTransfer.cs
- * Description: MongoDB document for a verified QR and the energy-transfer status
- *              of one approved reservation. Stored in the EnergyTransfers collection.
- *              Reservation status itself stays on EnergyReservations (Pending,
- *              Approved, Cancelled, Completed) and is not changed here until the
- *              transfer is marked completed.
- */
+
 
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;

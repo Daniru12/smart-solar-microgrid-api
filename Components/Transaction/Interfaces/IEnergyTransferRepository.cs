@@ -1,7 +1,4 @@
-/*
- * File: IEnergyTransferRepository.cs
- * Description: Data access for the EnergyTransfers collection.
- */
+
 
 using SmartSolarMicrogrid.API.Components.Transaction.Models;
 

@@ -3,21 +3,18 @@ using SmartSolarMicrogrid.API.Infrastructure.MongoDB;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddControllers();
 
-// Configure CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp",
-        builder => builder
-            .WithOrigins("http://localhost:5173", "http://127.0.0.1:5173")
+        policy => policy
+            .SetIsOriginAllowed(_ => true)
             .AllowAnyMethod()
             .AllowAnyHeader()
             .AllowCredentials());
 });
 
-// Configure JWT Authentication
 var jwtKey = builder.Configuration["JwtSettings:SecretKey"];
 builder.Services.AddAuthentication(Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -34,14 +31,12 @@ builder.Services.AddAuthentication(Microsoft.AspNetCore.Authentication.JwtBearer
         };
     });
 
-// Configure MongoDB Settings
 builder.Services.Configure<MongoDbSettings>(
     builder.Configuration.GetSection("MongoDbSettings"));
 
 builder.Services.AddSingleton<MongoDbSettings>(sp =>
     sp.GetRequiredService<IOptions<MongoDbSettings>>().Value);
 
-// Add Identity Component DI
 builder.Services.AddScoped<SmartSolarMicrogrid.API.Components.Identity.Interfaces.IUserRepository, SmartSolarMicrogrid.API.Components.Identity.Repositories.UserRepository>();
 builder.Services.AddScoped<SmartSolarMicrogrid.API.Components.Identity.Interfaces.IProsumerRepository, SmartSolarMicrogrid.API.Components.Identity.Repositories.ProsumerRepository>();
 builder.Services.AddScoped<SmartSolarMicrogrid.API.Components.Identity.Interfaces.IAuthService, SmartSolarMicrogrid.API.Components.Identity.Services.AuthService>();
@@ -50,37 +45,30 @@ builder.Services.AddScoped<SmartSolarMicrogrid.API.Components.Identity.Interface
 builder.Services.AddScoped<SmartSolarMicrogrid.API.Components.Identity.Interfaces.IRoleTabPermissionsRepository, SmartSolarMicrogrid.API.Components.Identity.Repositories.RoleTabPermissionsRepository>();
 builder.Services.AddScoped<SmartSolarMicrogrid.API.Components.Identity.Interfaces.IRoleTabPermissionsService, SmartSolarMicrogrid.API.Components.Identity.Services.RoleTabPermissionsService>();
 
-// Add Microgrid Component DI
 builder.Services.AddScoped<SmartSolarMicrogrid.API.Components.Microgrid.Interfaces.IMicrogridStationRepository, SmartSolarMicrogrid.API.Components.Microgrid.Repositories.MicrogridStationRepository>();
 builder.Services.AddScoped<SmartSolarMicrogrid.API.Components.Microgrid.Interfaces.IEnergySlotRepository, SmartSolarMicrogrid.API.Components.Microgrid.Repositories.EnergySlotRepository>();
 builder.Services.AddScoped<SmartSolarMicrogrid.API.Components.Microgrid.Interfaces.IMicrogridService, SmartSolarMicrogrid.API.Components.Microgrid.Services.MicrogridService>();
 
-// Booking component: create, approve, and cancel reservations.
-// Add Reservations Component DI
 builder.Services.AddScoped<SmartSolarMicrogrid.API.Components.Reservations.Interfaces.IReservationRepository, SmartSolarMicrogrid.API.Components.Reservations.Repositories.ReservationRepository>();
 builder.Services.AddScoped<SmartSolarMicrogrid.API.Components.Reservations.Interfaces.IReservationService, SmartSolarMicrogrid.API.Components.Reservations.Services.ReservationService>();
 builder.Services.AddScoped<SmartSolarMicrogrid.API.Components.Microgrid.Interfaces.IReservationChecker, SmartSolarMicrogrid.API.Components.Reservations.Services.ReservationService>();
 
-// QR issue, scan verification, and energy-transfer status.
 builder.Services.AddScoped<SmartSolarMicrogrid.API.Components.Transaction.Interfaces.IEnergyTransferRepository, SmartSolarMicrogrid.API.Components.Transaction.Repositories.EnergyTransferRepository>();
 builder.Services.AddScoped<SmartSolarMicrogrid.API.Components.Transaction.Interfaces.IReservationLookup, SmartSolarMicrogrid.API.Components.Transaction.Repositories.ReservationLookup>();
 builder.Services.AddScoped<SmartSolarMicrogrid.API.Components.Transaction.Interfaces.IEnergyTransferService, SmartSolarMicrogrid.API.Components.Transaction.Services.EnergyTransferService>();
 
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
-
 
 try
 {
     var settings = app.Services.GetRequiredService<MongoDbSettings>();
     var client = new MongoDB.Driver.MongoClient(settings.ConnectionString);
     var database = client.GetDatabase(settings.DatabaseName);
-    
-    // Ping to verify connection
+
     database.RunCommand((MongoDB.Driver.Command<MongoDB.Bson.BsonDocument>)"{ping:1}");
-    
+
     Console.ForegroundColor = ConsoleColor.Green;
     Console.WriteLine("\n=======================================================");
     Console.WriteLine(" SUCCESS: Successfully connected to MongoDB Database! ");
@@ -98,15 +86,9 @@ catch (Exception ex)
     Console.ResetColor();
 }
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-}
+app.MapOpenApi();
 
 app.UseCors("AllowReactApp");
-
-// app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();

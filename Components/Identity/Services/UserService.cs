@@ -60,7 +60,6 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
             var user = await _userRepository.GetByIdAsync(id);
             if (user == null) throw new KeyNotFoundException("User not found.");
 
-            // Parse string status to AccountStatus enum
             if (Enum.TryParse<AccountStatus>(request.Status, out var status))
             {
                 user.Status = status;
@@ -93,17 +92,15 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
             var user = await _userRepository.GetByIdAsync(id);
             if (user == null) throw new KeyNotFoundException("User not found.");
 
-            // Check if email is being changed and if it already exists
             if (user.Email != request.Email)
             {
                 var existing = await _userRepository.GetByEmailAsync(request.Email);
                 if (existing != null && existing.Id != id)
                     throw new InvalidOperationException("Email already exists.");
-                
+
                 user.Email = request.Email;
             }
 
-            // Update role if provided
             if (!string.IsNullOrEmpty(request.Role))
             {
                 if (Enum.TryParse<Role>(request.Role, out var role))
@@ -116,7 +113,6 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
                 }
             }
 
-            // Update status if provided
             if (!string.IsNullOrEmpty(request.Status))
             {
                 if (Enum.TryParse<AccountStatus>(request.Status, out var status))

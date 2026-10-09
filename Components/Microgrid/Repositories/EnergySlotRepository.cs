@@ -20,17 +20,17 @@ namespace SmartSolarMicrogrid.API.Components.Microgrid.Repositories
         {
             var builder = Builders<EnergyBookingSlot>.Filter;
             var filter = builder.Eq(s => s.StationId, stationId);
-            
+
             if (date.HasValue)
             {
                 filter &= builder.Eq(s => s.Date, date.Value.Date);
             }
-            
+
             if (availableOnly)
             {
                 filter &= builder.Eq(s => s.Status, "Available");
             }
-            
+
             return await _slots.Find(filter).ToListAsync();
         }
 
@@ -56,7 +56,7 @@ namespace SmartSolarMicrogrid.API.Components.Microgrid.Repositories
             var update = Builders<EnergyBookingSlot>.Update
                 .Set(s => s.Status, status)
                 .Set(s => s.UpdatedAt, DateTime.UtcNow);
-                
+
             var result = await _slots.UpdateOneAsync(s => s.SlotId == slotId, update);
             return result.IsAcknowledged && result.ModifiedCount > 0;
         }
@@ -65,7 +65,7 @@ namespace SmartSolarMicrogrid.API.Components.Microgrid.Repositories
         {
             var builder = Builders<EnergyBookingSlot>.Filter;
             var filter = builder.Eq(s => s.StationId, stationId) & builder.Eq(s => s.Date, date.Date);
-            
+
             return await _slots.Find(filter).ToListAsync();
         }
     }

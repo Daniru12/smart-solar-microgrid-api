@@ -1,8 +1,4 @@
-/*
- * File: TransferDtos.cs
- * Description: Request and response shapes for issuing a QR, verifying a scan,
- *              and reading energy-transfer status.
- */
+
 
 namespace SmartSolarMicrogrid.API.Components.Transaction.DTOs
 {

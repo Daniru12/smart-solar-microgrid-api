@@ -58,7 +58,7 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
                 Audience = _configuration["JwtSettings:Audience"],
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
             };
-            
+
             var token = tokenHandler.CreateToken(tokenDescriptor);
 
             string? nic = null;

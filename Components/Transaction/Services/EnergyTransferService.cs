@@ -1,9 +1,4 @@
-/*
- * File: EnergyTransferService.cs
- * Description: Issues a one-time QR after a reservation is Approved, checks a
- *              scanned code against the stored token and the slot time, then
- *              starts and completes the energy transfer.
- */
+
 
 using QRCoder;
 using SmartSolarMicrogrid.API.Components.Transaction.DTOs;
