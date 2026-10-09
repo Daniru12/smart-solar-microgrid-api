@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using SmartSolarMicrogrid.API.Components.Microgrid.DTOs;
 using SmartSolarMicrogrid.API.Components.Microgrid.Interfaces;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace SmartSolarMicrogrid.API.Components.Microgrid.Controllers
 {
@@ -41,10 +43,19 @@ namespace SmartSolarMicrogrid.API.Components.Microgrid.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "GridOperator,Admin")]
         public async Task<IActionResult> CreateStation([FromBody] CreateStationDto dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
-            
+
+            var userEmail = User.FindFirstValue(ClaimTypes.Email);
+            var userRole = User.FindFirstValue(ClaimTypes.Role);
+
+            if (userRole == "GridOperator" && !string.IsNullOrEmpty(userEmail))
+            {
+                dto.GridOperatorName = userEmail;
+            }
+
             var created = await _microgridService.CreateStationAsync(dto);
             return CreatedAtAction(nameof(GetStationById), new { id = created.StationId }, created);
         }

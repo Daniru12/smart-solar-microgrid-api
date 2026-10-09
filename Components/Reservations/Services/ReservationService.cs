@@ -12,11 +12,16 @@ namespace SmartSolarMicrogrid.API.Components.Reservations.Services
     {
         private readonly IReservationRepository _repository;
         private readonly IEnergySlotRepository _slotRepository;
+        private readonly IMicrogridStationRepository _stationRepository;
 
-        public ReservationService(IReservationRepository repository, IEnergySlotRepository slotRepository)
+        public ReservationService(
+            IReservationRepository repository, 
+            IEnergySlotRepository slotRepository,
+            IMicrogridStationRepository stationRepository)
         {
             _repository = repository;
             _slotRepository = slotRepository;
+            _stationRepository = stationRepository;
         }
 
         public async Task<bool> HasActiveReservationsForStationAsync(string stationId)
@@ -46,6 +51,8 @@ namespace SmartSolarMicrogrid.API.Components.Reservations.Services
             if (slot.AvailableCapacity < dto.EnergyAmountKwh)
                 throw new InvalidOperationException($"Not enough capacity in the slot. Requested: {dto.EnergyAmountKwh} kWh, Available: {slot.AvailableCapacity} kWh.");
 
+            var station = await _stationRepository.GetStationByIdAsync(dto.StationId);
+
             var reservation = new EnergyReservation
             {
                 ProsumerNic = dto.ProsumerNic,
@@ -58,9 +65,9 @@ namespace SmartSolarMicrogrid.API.Components.Reservations.Services
                 CreatedAt = now,
                 UpdatedAt = now,
 
-                StartTime = string.Empty,
-                EndTime = string.Empty,
-                StationName = string.Empty
+                StartTime = slot.StartTime ?? string.Empty,
+                EndTime = slot.EndTime ?? string.Empty,
+                StationName = station?.Name ?? string.Empty
             };
 
             var created = await _repository.CreateAsync(reservation);
@@ -79,13 +86,18 @@ namespace SmartSolarMicrogrid.API.Components.Reservations.Services
 
             if (existing.Status != ReservationStatus.Pending)
                 throw new InvalidOperationException(
-                    $"Only Pending reservations can be updated. Current status: {existing.Status}.");
+                    $"Only Pending reservations can be updated before grid operator approval. Current status: {existing.Status}.");
 
-            var hoursUntilReservation = (existing.ReservationDate - DateTime.UtcNow).TotalHours;
+            var scheduledTime = existing.ReservationDate;
+            if (!string.IsNullOrEmpty(existing.StartTime) && TimeSpan.TryParse(existing.StartTime, out var timeSpan))
+            {
+                scheduledTime = existing.ReservationDate.Date.Add(timeSpan);
+            }
+            var hoursUntilReservation = (scheduledTime - DateTime.UtcNow).TotalHours;
             if (hoursUntilReservation < 12)
                 throw new InvalidOperationException(
                     "Updates require at least 12 hours' notice before the reservation time. " +
-                    $"Only {hoursUntilReservation:F1} hours remain.");
+                    $"Only {Math.Max(0, hoursUntilReservation):F1} hours remain.");
 
             var now = DateTime.UtcNow;
             if (dto.ReservationDate.Date < now.Date)
@@ -95,26 +107,15 @@ namespace SmartSolarMicrogrid.API.Components.Reservations.Services
                 throw new InvalidOperationException(
                     "New reservation date must be within 7 days from today.");
 
-            bool slotOrDateChanged = dto.SlotId != existing.SlotId ||
-                                     dto.ReservationDate.Date != existing.ReservationDate.Date;
-            if (slotOrDateChanged)
-            {
-                var isConflicting = await _repository.HasConflictingReservationForSlotAsync(
-                    dto.SlotId, dto.ReservationDate);
-                if (isConflicting)
-                    throw new InvalidOperationException(
-                        "The new slot is already booked for the selected date.");
-            }
-
             var oldSlot = await _slotRepository.GetSlotByIdAsync(existing.SlotId);
             var newSlot = dto.SlotId == existing.SlotId ? oldSlot : await _slotRepository.GetSlotByIdAsync(dto.SlotId);
 
-            if (newSlot == null) throw new InvalidOperationException("The new selected slot does not exist.");
+            if (newSlot == null) throw new InvalidOperationException("The selected slot does not exist.");
 
             if (dto.SlotId == existing.SlotId)
             {
                 double diff = dto.EnergyAmountKwh - existing.EnergyAmountKwh;
-                if (newSlot.AvailableCapacity < diff)
+                if (diff > 0 && newSlot.AvailableCapacity < diff)
                     throw new InvalidOperationException($"Not enough capacity. Need {diff} more kWh, but only {newSlot.AvailableCapacity} available.");
 
                 newSlot.AvailableCapacity -= diff;
@@ -124,7 +125,7 @@ namespace SmartSolarMicrogrid.API.Components.Reservations.Services
             else
             {
                 if (newSlot.AvailableCapacity < dto.EnergyAmountKwh)
-                    throw new InvalidOperationException($"Not enough capacity in the new slot.");
+                    throw new InvalidOperationException($"Not enough capacity in the new slot. Requested: {dto.EnergyAmountKwh} kWh, Available: {newSlot.AvailableCapacity} kWh.");
 
                 if (oldSlot != null)
                 {
@@ -142,6 +143,15 @@ namespace SmartSolarMicrogrid.API.Components.Reservations.Services
             existing.ReservationDate = dto.ReservationDate.ToUniversalTime();
             existing.EnergyAmountKwh = dto.EnergyAmountKwh;
             existing.Notes = dto.Notes;
+            if (!string.IsNullOrEmpty(newSlot.StartTime))
+                existing.StartTime = newSlot.StartTime;
+            if (!string.IsNullOrEmpty(newSlot.EndTime))
+                existing.EndTime = newSlot.EndTime;
+            if (string.IsNullOrEmpty(existing.StationName))
+            {
+                var station = await _stationRepository.GetStationByIdAsync(existing.StationId);
+                if (station != null) existing.StationName = station.Name;
+            }
             existing.UpdatedAt = DateTime.UtcNow;
 
             await _repository.UpdateAsync(id, existing);
@@ -182,11 +192,16 @@ namespace SmartSolarMicrogrid.API.Components.Reservations.Services
             if (existing.Status == ReservationStatus.Completed)
                 throw new InvalidOperationException("Completed reservations cannot be cancelled.");
 
-            var hoursUntilReservation = (existing.ReservationDate - DateTime.UtcNow).TotalHours;
+            var scheduledTime = existing.ReservationDate;
+            if (!string.IsNullOrEmpty(existing.StartTime) && TimeSpan.TryParse(existing.StartTime, out var timeSpan))
+            {
+                scheduledTime = existing.ReservationDate.Date.Add(timeSpan);
+            }
+            var hoursUntilReservation = (scheduledTime - DateTime.UtcNow).TotalHours;
             if (hoursUntilReservation < 12)
                 throw new InvalidOperationException(
                     "Cancellations require at least 12 hours' notice before the reservation time. " +
-                    $"Only {hoursUntilReservation:F1} hours remain.");
+                    $"Only {Math.Max(0, hoursUntilReservation):F1} hours remain.");
 
             existing.Status = ReservationStatus.Cancelled;
             existing.CancelledAt = DateTime.UtcNow;
