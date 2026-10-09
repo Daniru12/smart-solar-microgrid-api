@@ -34,5 +34,11 @@ namespace SmartSolarMicrogrid.API.Components.Transaction.Repositories
             var result = await _transfers.ReplaceOneAsync(t => t.ReservationId == transfer.ReservationId, transfer);
             return result.IsAcknowledged && result.ModifiedCount > 0;
         }
+
+        public async Task<bool> DeleteByReservationIdAsync(string reservationId)
+        {
+            var result = await _transfers.DeleteOneAsync(t => t.ReservationId == reservationId);
+            return result.DeletedCount > 0;
+        }
     }
 }

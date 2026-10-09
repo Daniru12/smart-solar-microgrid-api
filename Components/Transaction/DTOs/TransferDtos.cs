@@ -7,6 +7,14 @@ namespace SmartSolarMicrogrid.API.Components.Transaction.DTOs
         public string QrPayload { get; set; } = string.Empty;
     }
 
+    public class UpdateTransferRequest
+    {
+        public string StationName { get; set; } = string.Empty;
+        public string StartTime { get; set; } = string.Empty;
+        public string EndTime { get; set; } = string.Empty;
+        public double EnergyAmountKwh { get; set; }
+    }
+
     public class TransferResponse
     {
         public string ReservationId { get; set; } = string.Empty;

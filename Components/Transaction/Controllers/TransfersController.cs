@@ -39,6 +39,63 @@ namespace SmartSolarMicrogrid.API.Components.Transaction.Controllers
             }
         }
 
+        [HttpPut("reservations/{reservationId}/regenerate")]
+        [Authorize(Roles = "Backoffice,GridOperator")]
+        public async Task<IActionResult> RegenerateQr(string reservationId)
+        {
+            try
+            {
+                var result = await _service.RegenerateQrAsync(reservationId);
+                return Ok(new { Success = true, Data = result, Message = result.Message });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { Success = false, Message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { Success = false, Message = ex.Message });
+            }
+        }
+
+        [HttpPut("reservations/{reservationId}")]
+        [Authorize(Roles = "Backoffice,GridOperator")]
+        public async Task<IActionResult> UpdateQr(string reservationId, [FromBody] UpdateTransferRequest request)
+        {
+            try
+            {
+                var result = await _service.UpdateQrAsync(reservationId, request);
+                return Ok(new { Success = true, Data = result, Message = result.Message });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { Success = false, Message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { Success = false, Message = ex.Message });
+            }
+        }
+
+        [HttpDelete("reservations/{reservationId}")]
+        [Authorize(Roles = "Backoffice,GridOperator")]
+        public async Task<IActionResult> DeleteQr(string reservationId)
+        {
+            try
+            {
+                await _service.DeleteQrAsync(reservationId);
+                return Ok(new { Success = true, Message = "QR deleted. The old code no longer works." });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { Success = false, Message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { Success = false, Message = ex.Message });
+            }
+        }
+
         [HttpGet("reservations/{reservationId}")]
         public async Task<IActionResult> GetConfirmation(string reservationId)
         {
