@@ -131,7 +131,7 @@ namespace SmartSolarMicrogrid.API.Components.Reservations.Controllers
         }
 
         [HttpPut("{id}")]
-        [Authorize(Roles = "Prosumer")]
+        [Authorize(Roles = "Prosumer,Backoffice")]
         public async Task<IActionResult> Update(string id, [FromBody] UpdateReservationDto dto)
         {
             try

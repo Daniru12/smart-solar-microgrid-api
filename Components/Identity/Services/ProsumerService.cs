@@ -1,4 +1,4 @@
-﻿using SmartSolarMicrogrid.API.Components.Identity.DTOs;
+using SmartSolarMicrogrid.API.Components.Identity.DTOs;
 using SmartSolarMicrogrid.API.Components.Identity.Interfaces;
 using SmartSolarMicrogrid.API.Components.Identity.Models;
 using System;
@@ -32,7 +32,7 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
                 Email = request.Email,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
                 Role = Role.Prosumer,
-                Status = AccountStatus.Active
+                Status = AccountStatus.Pending
             };
             await _userRepository.CreateAsync(user);
 
@@ -142,10 +142,10 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
             if (user.Status == AccountStatus.Deactivated)
                 throw new InvalidOperationException("Account is already deactivated.");
 
-            if (user.Status == AccountStatus.Pending)
-                throw new InvalidOperationException("Account is already pending activation.");
+            if (user.Status == AccountStatus.PendingDeactivation)
+                throw new InvalidOperationException("Account is already pending deactivation.");
 
-            user.Status = AccountStatus.Pending;
+            user.Status = AccountStatus.PendingDeactivation;
             await _userRepository.UpdateAsync(user.Id, user);
         }
 
@@ -256,7 +256,7 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
         public async Task<List<ProsumerProfileResponse>> GetDeactivationRequestsAsync()
         {
             var allUsers = await _userRepository.GetAllAsync();
-            var prosumerUsers = allUsers.Where(u => u.Role == Role.Prosumer && u.Status == AccountStatus.Pending).ToList();
+            var prosumerUsers = allUsers.Where(u => u.Role == Role.Prosumer && u.Status == AccountStatus.PendingDeactivation).ToList();
 
             var result = new List<ProsumerProfileResponse>();
             foreach (var user in prosumerUsers)
@@ -290,7 +290,7 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
             var user = await _userRepository.GetByIdAsync(prosumer.UserId);
             if (user == null) throw new KeyNotFoundException("User not found.");
 
-            if (user.Status != AccountStatus.Pending)
+            if (user.Status != AccountStatus.PendingDeactivation)
                 throw new InvalidOperationException("Can only approve pending deactivation requests.");
 
             user.Status = AccountStatus.Deactivated;
@@ -305,7 +305,7 @@ namespace SmartSolarMicrogrid.API.Components.Identity.Services
             var user = await _userRepository.GetByIdAsync(prosumer.UserId);
             if (user == null) throw new KeyNotFoundException("User not found.");
 
-            if (user.Status != AccountStatus.Pending)
+            if (user.Status != AccountStatus.PendingDeactivation)
                 throw new InvalidOperationException("Can only reject pending deactivation requests.");
 
             user.Status = AccountStatus.Active;

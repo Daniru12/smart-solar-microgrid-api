@@ -6,6 +6,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <OutputPath>$(LOCALAPPDATA)\Temp\smart-solar-microgrid-api\bin\$(Configuration)\</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <UseAppHost>false</UseAppHost>
+    <RollForward>Major</RollForward>
   </PropertyGroup>
 
   <ItemGroup>
