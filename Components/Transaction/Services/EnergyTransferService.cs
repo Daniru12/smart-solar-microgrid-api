@@ -52,6 +52,64 @@ namespace SmartSolarMicrogrid.API.Components.Transaction.Services
             return Map(transfer, "Booking confirmed. Show this QR to the grid operator at the slot time.");
         }
 
+        public async Task<TransferResponse> RegenerateQrAsync(string reservationId)
+        {
+            var transfer = await RequireOpenTransferAsync(reservationId);
+            var token = Guid.NewGuid().ToString("N");
+            var now = DateTime.UtcNow;
+            transfer.QrToken = token;
+            transfer.QrPayload = $"SSM|{transfer.ReservationId}|{token}";
+            transfer.QrIssuedAt = now;
+            transfer.TransferStatus = TransferStatusNames.QrIssued;
+            transfer.VerifiedAt = null;
+            transfer.TransferStartedAt = null;
+            transfer.UpdatedAt = now;
+            await _transfers.UpdateAsync(transfer);
+            return Map(transfer, "QR regenerated. The previous code no longer works.");
+        }
+
+        public async Task<TransferResponse> UpdateQrAsync(string reservationId, UpdateTransferRequest request)
+        {
+            var transfer = await RequireOpenTransferAsync(reservationId);
+            if (request.EnergyAmountKwh <= 0)
+            {
+                throw new InvalidOperationException("Energy amount must be greater than zero.");
+            }
+
+            if (string.IsNullOrWhiteSpace(request.StartTime) || string.IsNullOrWhiteSpace(request.EndTime))
+            {
+                throw new InvalidOperationException("Start time and end time are required.");
+            }
+
+            transfer.StationName = request.StationName?.Trim() ?? string.Empty;
+            transfer.StartTime = request.StartTime.Trim();
+            transfer.EndTime = request.EndTime.Trim();
+            transfer.EnergyAmountKwh = request.EnergyAmountKwh;
+            transfer.UpdatedAt = DateTime.UtcNow;
+            await _transfers.UpdateAsync(transfer);
+            return Map(transfer, "QR details updated.");
+        }
+
+        public async Task DeleteQrAsync(string reservationId)
+        {
+            var transfer = await _transfers.GetByReservationIdAsync(reservationId);
+            if (transfer == null)
+            {
+                throw new KeyNotFoundException("No QR has been issued for this booking yet.");
+            }
+
+            if (transfer.TransferStatus == TransferStatusNames.Completed)
+            {
+                throw new InvalidOperationException("A completed transfer cannot be deleted.");
+            }
+
+            var deleted = await _transfers.DeleteByReservationIdAsync(reservationId);
+            if (!deleted)
+            {
+                throw new KeyNotFoundException("No QR has been issued for this booking yet.");
+            }
+        }
+
         public async Task<TransferResponse> GetConfirmationAsync(string reservationId, string? userId, string? role)
         {
             var transfer = await _transfers.GetByReservationIdAsync(reservationId);
@@ -143,6 +201,22 @@ namespace SmartSolarMicrogrid.API.Components.Transaction.Services
             await _transfers.UpdateAsync(transfer);
 
             return Map(transfer, "Energy transfer completed.");
+        }
+
+        private async Task<EnergyTransfer> RequireOpenTransferAsync(string reservationId)
+        {
+            var transfer = await _transfers.GetByReservationIdAsync(reservationId);
+            if (transfer == null)
+            {
+                throw new KeyNotFoundException("No QR has been issued for this booking yet.");
+            }
+
+            if (transfer.TransferStatus == TransferStatusNames.Completed)
+            {
+                throw new InvalidOperationException("This transfer is already completed.");
+            }
+
+            return transfer;
         }
 
         private async Task<ReservationSnapshot> RequireApprovedReservationAsync(string reservationId)
