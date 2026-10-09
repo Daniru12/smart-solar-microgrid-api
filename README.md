@@ -1426,3 +1426,8 @@ Verify
 If an implementation decision is ambiguous, inspect the existing codebase first rather than introducing a new architecture.
 
 The final implementation must remain understandable to the students who developed it, since the assignment includes a supervised viva where students must explain and justify their implementation and development decisions.
+
+Youtube Video Link : https://youtu.be/Bd7gDFGmAKw
+Repo Link Web : https://github.com/ishani2924/smart-solar-microgrid-web.git
+Repo Link Mobile : https://github.com/Daniru12/smart-solar-microgrid-mobile.git
+Repo Link Backend : https://github.com/Daniru12/smart-solar-microgrid-api.git

@@ -38,6 +38,7 @@ namespace SmartSolarMicrogrid.API.Components.Microgrid.Services
             {
                 StationId = Guid.NewGuid().ToString(),
                 Name = createDto.Name,
+                GridOperatorName = createDto.GridOperatorName,
                 Address = createDto.Address,
                 Latitude = createDto.Latitude,
                 Longitude = createDto.Longitude,
@@ -61,6 +62,7 @@ namespace SmartSolarMicrogrid.API.Components.Microgrid.Services
             if (existing == null) return false;
 
             existing.Name = updateDto.Name;
+            existing.GridOperatorName = updateDto.GridOperatorName;
             existing.Address = updateDto.Address;
             existing.Latitude = updateDto.Latitude;
             existing.Longitude = updateDto.Longitude;
@@ -163,7 +165,10 @@ namespace SmartSolarMicrogrid.API.Components.Microgrid.Services
             var existing = await _slotRepo.GetSlotByIdAsync(slotId);
             if (existing == null) return false;
 
-            existing.Capacity = updateDto.Capacity;
+            if (updateDto.Capacity > 0)
+            {
+                existing.Capacity = updateDto.Capacity;
+            }
             if (!string.IsNullOrEmpty(updateDto.Status))
             {
                 existing.Status = updateDto.Status;
@@ -187,6 +192,7 @@ namespace SmartSolarMicrogrid.API.Components.Microgrid.Services
             {
                 StationId = station.StationId,
                 Name = station.Name,
+                GridOperatorName = station.GridOperatorName,
                 Address = station.Address,
                 Latitude = station.Latitude,
                 Longitude = station.Longitude,
