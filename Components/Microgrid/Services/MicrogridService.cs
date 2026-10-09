@@ -169,7 +169,6 @@ namespace SmartSolarMicrogrid.API.Components.Microgrid.Services
             {
                 existing.Capacity = updateDto.Capacity;
             }
-            
             if (!string.IsNullOrEmpty(updateDto.Status))
             {
                 existing.Status = updateDto.Status;
